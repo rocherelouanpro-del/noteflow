@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "noteflow",
+      "runtimeExecutable": "/opt/homebrew/bin/npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "/Users/elou/Desktop/projets/creation_site_web/noteflow",
+      "port": 1420
+    }
+  ]
+}

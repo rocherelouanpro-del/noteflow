@@ -1,0 +1,435 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- Thèmes ----
+   Tokens en triplets RGB pour que les variantes d'opacité Tailwind
+   (bg-panel/50, border-line/60…) fonctionnent. Les variables "pleines"
+   (--line-strong, --placeholder, --scrollbar) sont utilisées telles quelles. */
+:root {
+  --paper: 255 255 255;
+  --panel: 247 246 243;
+  --card: 255 255 255;
+  --hover: 239 239 237;
+  --line: 233 233 231;
+  --ink: 55 53 47;
+  --ink-light: 95 94 91;
+  --ink-faint: 155 154 151;
+  --accent: 35 131 226;
+  --line-strong: #cfcdc7;
+  --placeholder: #c7c6c3;
+  --scrollbar: #d3d1cb;
+  color-scheme: light;
+}
+
+.dark {
+  --paper: 25 25 25;
+  --panel: 32 32 32;
+  --card: 38 38 38;
+  --hover: 46 46 46;
+  --line: 52 52 52;
+  --ink: 232 231 228;
+  --ink-light: 169 168 165;
+  --ink-faint: 111 110 107;
+  --accent: 82 156 202;
+  --line-strong: #4c4c4a;
+  --placeholder: #5c5b58;
+  --scrollbar: #454545;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-paper text-ink font-sans antialiased;
+  font-size: 15px;
+}
+
+::selection {
+  background: rgba(35, 131, 226, 0.28);
+}
+
+/* ---- Éditeur ---- */
+[contenteditable] {
+  outline: none;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+/* Placeholder visible en permanence (titres, titre de page) */
+.ph-always[contenteditable]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--placeholder);
+  pointer-events: none;
+}
+
+/* Placeholder visible seulement au focus (paragraphes) */
+.ph-focus[contenteditable]:empty:focus::before {
+  content: attr(data-placeholder);
+  color: var(--placeholder);
+  pointer-events: none;
+}
+
+/* Les surlignages (pastels clairs, stockés en inline) gardent un texte sombre
+   en mode dark — sauf quand le surlignage a été retiré (transparent). */
+.dark [data-rich] span[style*="background-color"] {
+  color: #202020;
+}
+.dark [data-rich] span[style*="background-color: transparent"],
+.dark [data-rich] span[style*="background-color:transparent"] {
+  color: inherit;
+}
+
+/* Code en ligne et liens issus du Markdown collé (cf. markdown.js) */
+[data-rich] code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: rgb(var(--hover));
+  color: #d4495a;
+  padding: 0.1em 0.34em;
+  border-radius: 4px;
+  border: 1px solid rgb(var(--line));
+}
+.dark [data-rich] code {
+  color: #f0879e;
+}
+[data-rich] a {
+  color: rgb(var(--accent));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.block-h1 {
+  @apply text-3xl font-bold mt-6 mb-1;
+}
+.block-h2 {
+  @apply text-2xl font-semibold mt-5 mb-1;
+}
+.block-h3 {
+  @apply text-xl font-semibold mt-4 mb-0.5;
+}
+.block-p {
+  @apply leading-relaxed py-0.5;
+}
+
+/* Liste à puces : « - » + espace en tête de bloc (cf. TextBlock).
+   La puce vit en dehors du contenu éditable (::after absolu dans le
+   retrait gauche) pour ne perturber ni caret ni placeholder (::before). */
+.block-bullet {
+  @apply relative leading-relaxed py-0.5 pl-6;
+}
+.block-bullet::after {
+  content: "•";
+  position: absolute;
+  left: 9px;
+  top: 0.125rem;
+  line-height: 1.625;
+  font-size: 1.05em;
+  pointer-events: none;
+}
+
+/* Pendant un drag de bloc : les éléments flottants (poignées invisibles,
+   bouton + des colonnes) ne doivent pas intercepter les hit-tests —
+   les poignées débordent dans les interstices entre colonnes et
+   détourneraient le dépôt vers leur bloc. */
+[data-dragging] [data-block-handle],
+[data-dragging] [data-drag-inert] {
+  pointer-events: none;
+}
+
+/* Curseur « grabbing » partout pendant le drag */
+[data-dragging],
+[data-dragging] * {
+  cursor: grabbing !important;
+}
+
+/* Fantôme translucide du bloc qui suit le curseur (drag souris, cf. dnd.js) */
+.nf-drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  max-width: 340px;
+  max-height: 96px;
+  overflow: hidden;
+  padding: 2px 10px;
+  border-radius: 8px;
+  background: rgb(var(--card));
+  border: 1px solid rgb(var(--line));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+/* ---- Poignées de redimensionnement (colonnes de tableau + barre latérale) ----
+   Zone de saisie large (7px) chevauchant la bordure, avec un filet accentué au
+   survol/glissé. Largeur appliquée en direct au DOM pendant le glissé (cf. code). */
+.nf-col-resizer,
+.nf-sidebar-resizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 7px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  user-select: none;
+  touch-action: none;
+}
+.nf-sidebar-resizer {
+  z-index: 20;
+}
+.nf-col-resizer::after,
+.nf-sidebar-resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: rgb(var(--accent));
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.nf-col-resizer:hover::after,
+.nf-sidebar-resizer:hover::after {
+  opacity: 0.55;
+}
+
+/* ---- Poignées de redimensionnement d'image (bords + coins, façon Notion) ---- */
+.nf-img-handle {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 48px;
+  max-height: 55%;
+  border-radius: 999px;
+  background: rgba(20, 20, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  opacity: 0;
+  transition: opacity 0.12s;
+  cursor: ew-resize;
+  z-index: 10;
+}
+.nf-img-handle.left {
+  left: 5px;
+}
+.nf-img-handle.right {
+  right: 5px;
+}
+.nf-img-corner {
+  position: absolute;
+  bottom: -6px;
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+  background: #fff;
+  border: 2px solid rgb(var(--accent));
+  opacity: 0;
+  transition: opacity 0.12s;
+  z-index: 10;
+}
+.nf-img-corner.bl {
+  left: -6px;
+  cursor: nesw-resize;
+}
+.nf-img-corner.br {
+  right: -6px;
+  cursor: nwse-resize;
+}
+.nf-img-wrap:hover .nf-img-handle,
+.nf-img-wrap:hover .nf-img-corner {
+  opacity: 1;
+}
+/* pendant un drag de bloc, les poignées d'image restent invisibles et inertes */
+[data-dragging] .nf-img-handle,
+[data-dragging] .nf-img-corner {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+/* ---- Marges de page : bandes verticales dans les gouttières gauche/droite ---- */
+.nf-page-margin {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  cursor: col-resize;
+  z-index: 1;
+  user-select: none;
+}
+.nf-page-margin::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 3px;
+  width: 1px;
+  border-radius: 1px;
+  background: var(--line-strong);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.nf-page-margin:hover::after {
+  opacity: 1;
+}
+.nf-col-resizing .nf-page-margin::after {
+  opacity: 1;
+}
+
+/* ---- Marges par bloc : discrets traits gris aux bords, au survol du bloc.
+   L'élément (5px) reste la zone de saisie ; le trait visible (3px) est dessiné
+   en ::after pour rester fin sans devenir difficile à attraper. ---- */
+.nf-margin-handle {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 22px;
+  max-height: 70%;
+  opacity: 0;
+  transition: opacity 0.12s;
+  cursor: col-resize;
+  z-index: 10;
+}
+.nf-margin-handle::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 1px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+.nf-margin-handle:hover::after {
+  background: rgb(var(--ink-faint));
+}
+.group\/blk:hover > .nf-margin-handle {
+  opacity: 1;
+}
+[data-dragging] .nf-margin-handle,
+[data-dragging] .nf-page-margin {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+/* ---- Réordonner colonnes/lignes d'un tableau ----
+   Poignée ⠿ discrète (au-dessus de l'en-tête pour une colonne, à gauche de la
+   ligne), + ligne d'insertion accentuée qui suit le curseur pendant le glissé. */
+.nf-col-grip {
+  position: absolute;
+  top: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 13px;
+  padding: 0 6px;
+  color: var(--placeholder);
+  opacity: 0;
+  transition: opacity 0.12s;
+  cursor: grab;
+  z-index: 11;
+}
+.group\/th:hover .nf-col-grip {
+  opacity: 1;
+}
+.nf-row-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 22px;
+  color: var(--placeholder);
+  opacity: 0;
+  transition: opacity 0.12s;
+  cursor: grab;
+}
+.group\/row:hover .nf-row-grip {
+  opacity: 1;
+}
+.nf-col-grip:hover,
+.nf-row-grip:hover {
+  color: rgb(var(--ink-faint));
+}
+.nf-table-drop {
+  position: absolute;
+  background: rgb(var(--accent));
+  border-radius: 2px;
+  z-index: 20;
+  pointer-events: none;
+}
+.nf-table-dragging,
+.nf-table-dragging * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+/* Pendant un redimensionnement : curseur col-resize partout, pas de sélection,
+   et le filet de la poignée active reste visible. */
+.nf-col-resizing,
+.nf-col-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+.nf-col-resizing .nf-col-resizer::after,
+.nf-col-resizing .nf-sidebar-resizer::after {
+  opacity: 0.7;
+}
+
+@layer components {
+  .icon-btn {
+    @apply flex items-center justify-center rounded text-ink-faint hover:bg-hover hover:text-ink-light transition-colors;
+  }
+  .menu-panel {
+    @apply bg-card rounded-lg border border-line shadow-xl shadow-black/10 dark:shadow-black/40 py-1.5 z-50;
+  }
+  .menu-item {
+    @apply flex items-center gap-2.5 px-3 py-1.5 text-sm cursor-pointer hover:bg-hover w-full text-left;
+  }
+}
+
+/* Mode édition des widgets : wiggle façon iPhone */
+@keyframes wiggle {
+  0% {
+    transform: rotate(-0.7deg);
+  }
+  50% {
+    transform: rotate(0.7deg);
+  }
+  100% {
+    transform: rotate(-0.7deg);
+  }
+}
+.wiggle {
+  animation: wiggle 0.35s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wiggle {
+    animation: none;
+  }
+}
+
+/* Scrollbars discrètes façon macOS */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
