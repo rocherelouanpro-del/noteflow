@@ -14,6 +14,10 @@ const StoreContext = createContext(null);
 
 const DEFAULT_HABITS = ["Méditation", "Sport", "Travail", "Coucher sans tél", "Boire 3L"];
 
+// Profondeur d'annulation. Les instantanés sont des copies complètes de l'état
+// (images incluses, en data URL) : on borne pour ne pas faire enfler la mémoire.
+const HISTORY_LIMIT = 50;
+
 function defaultState() {
   const pageId = uid();
   const welcome = {
@@ -246,13 +250,45 @@ export function StoreProvider({ children }) {
     return () => clearTimeout(saveTimer.current);
   }, [state]);
 
-  const mutate = useCallback((fn) => {
-    setState((prev) => {
-      const s = structuredClone(prev);
-      fn(s);
-      return s;
-    });
+  // ---- Historique (Cmd/Ctrl+Z) ----
+  // Instantanés de l'état complet, empilés AVANT chaque mutation. Capturés hors
+  // du updater de setState (via stateRef) : React peut rejouer un updater, ce
+  // qui dupliquerait les entrées. Deux garde-fous :
+  //  • déduplication par référence — plusieurs mutate dans le même tick partagent
+  //    le même stateRef, on n'empile qu'une fois (1 action = 1 annulation) ;
+  //  • fusion (coalesceKey) — la frappe dans un même bloc n'empile qu'une entrée
+  //    par salve de 600 ms, sinon Cmd+Z reviendrait caractère par caractère.
+  const undoStack = useRef([]);
+  const redoStack = useRef([]);
+  const lastEdit = useRef({ key: null, time: 0 });
+
+  const pushHistory = useCallback((coalesceKey) => {
+    const prev = stateRef.current;
+    if (!prev) return;
+    if (undoStack.current[undoStack.current.length - 1] === prev) return;
+    const now = Date.now();
+    const last = lastEdit.current;
+    if (coalesceKey && last.key === coalesceKey && now - last.time < 600) {
+      last.time = now;
+      return;
+    }
+    lastEdit.current = { key: coalesceKey || null, time: now };
+    undoStack.current.push(prev);
+    if (undoStack.current.length > HISTORY_LIMIT) undoStack.current.shift();
+    redoStack.current.length = 0; // une nouvelle action invalide le rétablissement
   }, []);
+
+  const mutate = useCallback(
+    (fn, coalesceKey) => {
+      pushHistory(coalesceKey);
+      setState((prev) => {
+        const s = structuredClone(prev);
+        fn(s);
+        return s;
+      });
+    },
+    [pushHistory]
+  );
 
   const actions = useMemo(() => {
     const a = {};
@@ -275,7 +311,7 @@ export function StoreProvider({ children }) {
     a.renamePage = (id, title) =>
       mutate((s) => {
         if (s.pages[id]) s.pages[id].title = title;
-      });
+      }, `title:${id}`);
 
     a.setPageIcon = (id, icon) =>
       mutate((s) => {
@@ -358,18 +394,22 @@ export function StoreProvider({ children }) {
 
     // ---- Blocs ----
     a.updateBlock = (pageId, parentBlockId, blockId, patch) =>
-      mutate((s) => {
-        const list = getList(s.pages[pageId], parentBlockId);
-        const b = list?.find((x) => x.id === blockId);
-        if (b) Object.assign(b, patch);
-      });
+      mutate(
+        (s) => {
+          const list = getList(s.pages[pageId], parentBlockId);
+          const b = list?.find((x) => x.id === blockId);
+          if (b) Object.assign(b, patch);
+        },
+        // frappe dans un bloc texte : une seule entrée d'historique par salve
+        patch && Object.keys(patch).length === 1 && "html" in patch ? `html:${blockId}` : null
+      );
 
-    a.updateBlockWith = (pageId, parentBlockId, blockId, fn) =>
+    a.updateBlockWith = (pageId, parentBlockId, blockId, fn, coalesceKey) =>
       mutate((s) => {
         const list = getList(s.pages[pageId], parentBlockId);
         const b = list?.find((x) => x.id === blockId);
         if (b) fn(b);
-      });
+      }, coalesceKey);
 
     a.insertBlockAfter = (pageId, parentBlockId, afterId, block) => {
       mutate((s) => {
@@ -693,8 +733,45 @@ export function StoreProvider({ children }) {
         s.ui = { ...(s.ui || {}), sidebarCollapsed: !s.ui?.sidebarCollapsed };
       });
 
+    // ---- Annuler / Rétablir (Cmd/Ctrl+Z, Cmd+Maj+Z ou Ctrl+Y) ----
+    a.undo = () => {
+      const prev = undoStack.current.pop();
+      if (!prev) return;
+      if (stateRef.current) redoStack.current.push(stateRef.current);
+      lastEdit.current = { key: null, time: 0 };
+      setState(prev);
+    };
+
+    a.redo = () => {
+      const next = redoStack.current.pop();
+      if (!next) return;
+      if (stateRef.current) undoStack.current.push(stateRef.current);
+      lastEdit.current = { key: null, time: 0 };
+      setState(next);
+    };
+
     return a;
   }, [mutate]);
+
+  // Raccourcis d'historique interceptés globalement (capture) : on court-circuite
+  // l'annulation native du contenteditable, qui ne connaît que le texte et
+  // désynchroniserait le DOM de l'état (déplacements, tableaux, suppressions…).
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === "z") {
+        e.preventDefault();
+        if (e.shiftKey) actions.redo();
+        else actions.undo();
+      } else if (k === "y") {
+        e.preventDefault();
+        actions.redo();
+      }
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [actions]);
 
   const value = useMemo(
     () => ({ state, view, setView, focusId, setFocusId, ...actions }),

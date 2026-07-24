@@ -15,6 +15,7 @@ import {
   Smile,
   Image as ImageIcon,
   Paperclip,
+  Link2,
 } from "lucide-react";
 
 export const SLASH_ITEMS = [
@@ -24,6 +25,7 @@ export const SLASH_ITEMS = [
   { id: "image", label: "Image", desc: "Importer une image redimensionnable", icon: ImageIcon, kw: "image photo picture img capture" },
   { id: "file", label: "Fichier", desc: "Lien vers un fichier de l'ordinateur", icon: Paperclip, kw: "fichier file document pdf piece jointe lien attachement" },
   { id: "page", label: "Page", desc: "Créer une sous-page", icon: FileText, kw: "page sous-page subpage" },
+  { id: "linkpage", label: "Lien vers une page existante", desc: "Afficher une page déjà créée ici aussi", icon: Link2, kw: "lien link page existante reference raccourci alias deux endroits" },
   { id: "toggle", label: "Liste dépliante", desc: "Contenu repliable", icon: ChevronRight, kw: "toggle depliante liste pliable" },
   { id: "heading1", label: "Titre 1", desc: "Grand titre de section", icon: Heading1, kw: "heading 1 h1 titre" },
   { id: "heading2", label: "Titre 2", desc: "Titre moyen", icon: Heading2, kw: "heading 2 h2 titre" },

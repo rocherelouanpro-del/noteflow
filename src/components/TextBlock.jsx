@@ -5,6 +5,7 @@ import { parseMarkdown, mdToBlocks } from "../markdown";
 import { handleArrowNav } from "../keynav";
 import SlashMenu, { filterSlashItems } from "./SlashMenu";
 import EmojiPicker from "./EmojiPicker";
+import PagePicker from "./PagePicker";
 
 const TYPE_CLASS = {
   paragraph: "block-p",
@@ -86,6 +87,7 @@ function deleteSlashText(root, query) {
 
 export default function TextBlock({ page, parentBlockId, parentType, block, prevId }) {
   const {
+    state,
     updateBlock,
     transformBlock,
     insertBlockAfter,
@@ -101,6 +103,7 @@ export default function TextBlock({ page, parentBlockId, parentType, block, prev
   const [menu, setMenu] = useState(null); // { x, y, query }
   const [selIdx, setSelIdx] = useState(0);
   const [emojiPicker, setEmojiPicker] = useState(null); // { x, y } — insertion via /emoji
+  const [pagePicker, setPagePicker] = useState(null); // { x, y } — lien vers une page existante
   const emojiRangeRef = useRef(null); // caret mémorisé pour réinsérer l'emoji
   const imageInputRef = useRef(null); // input caché pour /image
 
@@ -199,6 +202,14 @@ export default function TextBlock({ page, parentBlockId, parentType, block, prev
       const pb = { id: uid(), type: "page", pageId: pid };
       replaceBlock(page.id, parentBlockId, block.id, pb);
       setView({ type: "page", id: pid });
+    } else if (item.id === "linkpage") {
+      // Lien vers une page DÉJÀ existante : la même page peut ainsi apparaître
+      // à plusieurs endroits. On n'écrit RIEN dans la page cible (son parentId
+      // et sa place dans l'arborescence restent inchangés) — c'est une référence.
+      const sel = window.getSelection();
+      let rect = sel && sel.rangeCount ? sel.getRangeAt(0).getBoundingClientRect() : null;
+      if (!rect || (!rect.x && !rect.y)) rect = ref.current.getBoundingClientRect();
+      setPagePicker({ x: rect.left, y: rect.bottom + 6 });
     } else if (item.id === "image") {
       imageInputRef.current?.click();
     } else if (item.id === "file") {
@@ -422,6 +433,19 @@ export default function TextBlock({ page, parentBlockId, parentType, block, prev
           heading="Emoji"
           onPick={insertEmoji}
           onClose={() => setEmojiPicker(null)}
+        />
+      )}
+      {pagePicker && (
+        <PagePicker
+          pos={pagePicker}
+          heading="Lien vers une page existante"
+          pages={Object.values(state.pages)}
+          excludeId={page.id}
+          onPick={(pid) => {
+            setPagePicker(null);
+            insertStandalone({ id: uid(), type: "page", pageId: pid });
+          }}
+          onClose={() => setPagePicker(null)}
         />
       )}
       <input

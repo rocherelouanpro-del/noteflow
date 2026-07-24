@@ -19,6 +19,7 @@ import {
 import { useStore } from "../store";
 import { uid, TAG_PALETTE } from "../utils";
 import PageIcon from "./PageIcon";
+import PagePicker from "./PagePicker";
 
 const COL_TYPES = [
   { id: "text", label: "Texte", icon: Type },
@@ -41,7 +42,8 @@ export default function TableBlock({ page, parentBlockId, block }) {
   // { kind: "col" | "addcol" | "tags" | "table", colId?, rowId?, x, y }
   const [menu, setMenu] = useState(null);
 
-  const mut = (fn) => updateBlockWith(page.id, parentBlockId, block.id, fn);
+  const mut = (fn, coalesceKey) =>
+    updateBlockWith(page.id, parentBlockId, block.id, fn, coalesceKey);
 
   const wrapRef = useRef(null);
   const tableRef = useRef(null);
@@ -317,7 +319,7 @@ export default function TableBlock({ page, parentBlockId, block }) {
                           mut((b) => {
                             const c = b.columns.find((x) => x.id === col.id);
                             if (c) c.name = v;
-                          });
+                          }, `colname:${col.id}`);
                         }}
                         className="flex-1 min-w-0 bg-transparent text-[13px] font-medium outline-none"
                       />
@@ -531,7 +533,7 @@ function Cell({ col, row, mut, openMenuAt, pageId }) {
     mut((b) => {
       const r = b.rows.find((x) => x.id === row.id);
       if (r) r.cells[col.id] = value;
-    });
+    }, `cell:${row.id}:${col.id}`);
 
   const v = row.cells[col.id];
 
@@ -670,7 +672,6 @@ function Cell({ col, row, mut, openMenuAt, pageId }) {
 // page » puis un sélecteur de page (recherche + liste). Sobre, en fixed.
 function CellPageMenu({ pos, query, pages, onPick, onNew, onClose }) {
   const [mode, setMode] = useState("cmd"); // "cmd" | "pick"
-  const [q, setQ] = useState("");
   const style = {
     left: Math.max(8, Math.min(pos.x, window.innerWidth - 270)),
     top: Math.min(pos.y, window.innerHeight - 330),
@@ -678,50 +679,15 @@ function CellPageMenu({ pos, query, pages, onPick, onNew, onClose }) {
   const cmdShown = !query || "page lien vers une sous-page".includes(query.toLowerCase());
 
   if (mode === "pick") {
-    const list = pages.filter((p) =>
-      (p.title || "Sans titre").toLowerCase().includes(q.trim().toLowerCase())
-    );
     return (
-      <>
-        <div className="fixed inset-0 z-40" onMouseDown={onClose} />
-        <div
-          className="menu-panel fixed z-50 w-64 max-h-72 overflow-hidden flex flex-col"
-          style={style}
-        >
-          <div className="px-2 py-1.5 border-b border-line shrink-0">
-            <input
-              autoFocus
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Chercher une page…"
-              className="w-full border border-line rounded px-2 py-1 text-[13px] bg-transparent outline-none focus:border-accent"
-            />
-          </div>
-          <div className="overflow-y-auto py-1">
-            <button className="menu-item text-accent" onMouseDown={(e) => e.preventDefault()} onClick={onNew}>
-              <Plus size={15} className="shrink-0" /> Nouvelle page
-            </button>
-            {list.length === 0 && (
-              <div className="px-3 py-2 text-[13px] text-ink-faint">Aucune page</div>
-            )}
-            {list.map((p) => (
-              <button
-                key={p.id}
-                className="menu-item"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => onPick(p.id)}
-              >
-                {p.icon ? (
-                  <PageIcon icon={p.icon} size={16} className="shrink-0" />
-                ) : (
-                  <FileText size={15} className="text-ink-faint shrink-0" />
-                )}
-                <span className="flex-1 truncate text-left">{p.title || "Sans titre"}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </>
+      <PagePicker
+        pos={pos}
+        heading="Lier une page"
+        pages={pages}
+        onPick={onPick}
+        onNew={onNew}
+        onClose={onClose}
+      />
     );
   }
 

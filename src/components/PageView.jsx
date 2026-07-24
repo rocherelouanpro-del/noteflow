@@ -144,22 +144,46 @@ export default function PageView({ page }) {
         setSel(ids);
         clearNative();
       } else {
-        const el = document.elementFromPoint(e.clientX, e.clientY);
-        const shell = el && el.closest("[data-root-block]");
-        const overId = shell ? shell.dataset.rootBlock : null;
+        // Bloc survolé déterminé par la position VERTICALE du curseur, PAS par
+        // elementFromPoint : pendant une sélection de texte native (capricieuse
+        // sous WebKit/WKWebView) elementFromPoint peut rester bloqué sur le bloc
+        // de départ → la bascule en sélection de blocs ne se déclenchait jamais
+        // dans l'app installée (surtout depuis un bloc long de plusieurs lignes).
+        const shells = rootShells();
+        let overId = null;
+        for (const shell of shells) {
+          const r = shell.getBoundingClientRect();
+          if (e.clientY >= r.top && e.clientY <= r.bottom) {
+            overId = shell.dataset.rootBlock;
+            break;
+          }
+        }
+        // curseur au-dessus du premier / sous le dernier bloc → on borne aux extrémités
+        if (!overId && shells.length) {
+          const firstR = shells[0].getBoundingClientRect();
+          const lastR = shells[shells.length - 1].getBoundingClientRect();
+          if (e.clientY < firstR.top) overId = shells[0].dataset.rootBlock;
+          else if (e.clientY > lastR.bottom)
+            overId = shells[shells.length - 1].dataset.rootBlock;
+        }
         if (overId && overId !== st.anchorId) {
           st.mode = "blocks";
           justDragged.current = true;
           document.body.style.userSelect = "none";
-          const order = rootShells().map((x) => x.dataset.rootBlock);
+          e.preventDefault(); // stoppe l'extension de la sélection de texte native
+          const order = shells.map((x) => x.dataset.rootBlock);
           const a = order.indexOf(st.anchorId);
           const b = order.indexOf(overId);
           const [lo, hi] = a < b ? [a, b] : [b, a];
           setSel(new Set(order.slice(lo, hi + 1)));
           clearNative();
           if (document.activeElement?.blur) document.activeElement.blur();
-        } else if (st.mode === "blocks" && overId === st.anchorId) {
-          setSel(new Set([st.anchorId]));
+        } else if (st.mode === "blocks") {
+          // rester en mode blocs : on bloque et on efface toute sélection native
+          // que WebKit tenterait de rétablir à chaque déplacement
+          e.preventDefault();
+          clearNative();
+          if (overId === st.anchorId) setSel(new Set([st.anchorId]));
         }
       }
     };
@@ -173,11 +197,18 @@ export default function PageView({ page }) {
         }, 0);
       }
     };
+    // En mode sélection de blocs, empêcher WebKit de (re)lancer une sélection de
+    // texte native — sinon un surlignage de texte parasite se superpose aux blocs.
+    const onSelectStart = (e) => {
+      if (dragSel.current?.mode === "blocks") e.preventDefault();
+    };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
+    document.addEventListener("selectstart", onSelectStart);
     return () => {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
+      document.removeEventListener("selectstart", onSelectStart);
       document.body.style.userSelect = "";
     };
   }, [setSel]);
