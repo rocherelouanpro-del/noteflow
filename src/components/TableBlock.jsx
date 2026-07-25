@@ -72,16 +72,16 @@ export default function TableBlock({ page, parentBlockId, block }) {
       if (tableRef.current) tableRef.current.style.width = baseTotal - startW + finalW + "px";
     };
     const onUp = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
       document.documentElement.classList.remove("nf-col-resizing");
       mut((b) => {
         const c = b.columns.find((x) => x.id === col.id);
         if (c) c.width = finalW;
       });
     };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
     document.documentElement.classList.add("nf-col-resizing");
   };
 
@@ -139,14 +139,14 @@ export default function TableBlock({ page, parentBlockId, block }) {
     place(e.clientX);
     const onMove = (ev) => place(ev.clientX);
     const onUp = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
       document.documentElement.classList.remove("nf-table-dragging");
       ind.style.display = "none";
       if (target !== index && target !== index + 1) moveColumn(index, target);
     };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
     document.documentElement.classList.add("nf-table-dragging");
   };
 
@@ -183,14 +183,14 @@ export default function TableBlock({ page, parentBlockId, block }) {
     place(e.clientY);
     const onMove = (ev) => place(ev.clientY);
     const onUp = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
       document.documentElement.classList.remove("nf-table-dragging");
       ind.style.display = "none";
       if (target !== index && target !== index + 1) moveRow(index, target);
     };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
     document.documentElement.classList.add("nf-table-dragging");
   };
 
@@ -306,7 +306,7 @@ export default function TableBlock({ page, parentBlockId, block }) {
                     <div
                       className="nf-col-grip"
                       data-col-resize="1"
-                      onMouseDown={(e) => startColDrag(e, index)}
+                      onPointerDown={(e) => startColDrag(e, index)}
                       title="Glisser pour déplacer la colonne"
                     >
                       <GripHorizontal size={12} />
@@ -337,7 +337,7 @@ export default function TableBlock({ page, parentBlockId, block }) {
                     <div
                       className="nf-col-resizer"
                       data-col-resize="1"
-                      onMouseDown={(e) => startColResize(e, col, index)}
+                      onPointerDown={(e) => startColResize(e, col, index)}
                       title="Redimensionner la colonne"
                     />
                   </th>
@@ -362,7 +362,7 @@ export default function TableBlock({ page, parentBlockId, block }) {
                     <div
                       className="nf-row-grip"
                       data-col-resize="1"
-                      onMouseDown={(e) => startRowDrag(e, rowIndex)}
+                      onPointerDown={(e) => startRowDrag(e, rowIndex)}
                       title="Glisser pour déplacer la ligne"
                     >
                       <GripVertical size={13} />

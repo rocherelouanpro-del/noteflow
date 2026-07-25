@@ -61,9 +61,24 @@ export default function Sidebar() {
     let started = false;
     let ghost = null;
     let target = null;
+    // Au doigt, la ligne est AUSSI la surface de défilement : un glissé
+    // immédiat ferait donc bouger la page au lieu de défiler. On exige un
+    // appui long (geste mobile habituel) ; tout mouvement avant la fin du
+    // délai est interprété comme un défilement et annule le déplacement.
+    const isTouch = e.pointerType === "touch";
+    let armed = !isTouch;
+    const longPress = isTouch
+      ? setTimeout(() => {
+          armed = true;
+          // vibration légère : confirme que le déplacement est amorcé
+          navigator.vibrate?.(15);
+        }, 450)
+      : null;
     const cleanup = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
+      clearTimeout(longPress);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onUp);
       document.removeEventListener("keydown", onKey, true);
       ghost?.remove();
       document.body.style.userSelect = "";
@@ -76,13 +91,22 @@ export default function Sidebar() {
       }
     };
     const onMove = (ev) => {
-      if (!(ev.buttons & 1)) {
+      if (!isTouch && !(ev.buttons & 1)) {
         target = null;
         cleanup();
         return;
       }
+      const moved = Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY);
+      if (!armed) {
+        // le doigt bouge avant la fin de l'appui long → c'est un défilement
+        if (moved > 10) {
+          target = null;
+          cleanup();
+        }
+        return;
+      }
       if (!started) {
-        if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) < 5) return;
+        if (moved < (isTouch ? 10 : 5)) return;
         started = true;
         document.body.style.userSelect = "none";
         ghost = document.createElement("div");
@@ -105,8 +129,9 @@ export default function Sidebar() {
         setExpanded((x) => ({ ...x, [t]: true }));
       }
     };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+    document.addEventListener("pointercancel", onUp);
     document.addEventListener("keydown", onKey, true);
   };
 
@@ -131,13 +156,13 @@ export default function Sidebar() {
       if (asideRef.current) asideRef.current.style.width = finalW + "px";
     };
     const onUp = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
       document.documentElement.classList.remove("nf-col-resizing");
       setSidebarWidth(finalW);
     };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
     document.documentElement.classList.add("nf-col-resizing");
   };
 
@@ -213,7 +238,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Poignée de redimensionnement (bord droit) */}
-      <div className="nf-sidebar-resizer" onMouseDown={startResize} title="Redimensionner" />
+      <div className="nf-sidebar-resizer" onPointerDown={startResize} title="Redimensionner" />
     </aside>
   );
 }
@@ -280,7 +305,7 @@ function PageNode({ page, depth, expanded, setExpanded, editingId, setEditingId,
         } ${isDropTarget ? "bg-accent/15 ring-1 ring-inset ring-accent/60" : ""}`}
         style={{ paddingLeft: depth * 14 + 4 }}
         onClick={() => setView({ type: "page", id: page.id })}
-        onMouseDown={(e) => beginPageDrag(e, page)}
+        onPointerDown={(e) => beginPageDrag(e, page)}
       >
         <button
           className="icon-btn w-5 h-5 shrink-0"

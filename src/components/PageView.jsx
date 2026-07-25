@@ -72,8 +72,12 @@ export default function PageView({ page }) {
     }
   });
 
-  const onMouseDownCapture = (e) => {
+  const onPointerDownCapture = (e) => {
     if (e.button !== 0) return;
+    // Au doigt, un glissé dans la page doit FAIRE DÉFILER : ni rectangle de
+    // sélection, ni bascule texte → blocs (sur mobile la sélection de texte
+    // passe par l'appui long natif, et la sélection de blocs par leur poignée).
+    if (e.pointerType === "touch") return;
     const t = e.target;
     if (t.closest(".menu-panel, [data-block-handle], [data-col-resize], button, input, textarea, select"))
       return;
@@ -202,12 +206,12 @@ export default function PageView({ page }) {
     const onSelectStart = (e) => {
       if (dragSel.current?.mode === "blocks") e.preventDefault();
     };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
     document.addEventListener("selectstart", onSelectStart);
     return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
       document.removeEventListener("selectstart", onSelectStart);
       document.body.style.userSelect = "";
     };
@@ -331,8 +335,8 @@ export default function PageView({ page }) {
       }
     };
     const onUp = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
       document.documentElement.classList.remove("nf-col-resizing");
       // largeur actuelle des blocs colonnes racine, mesurée AVANT le
       // changement de marge (le rendu est encore figé à cet instant)
@@ -343,8 +347,8 @@ export default function PageView({ page }) {
       });
       setPageMargins(page.id, { left, right }, pins);
     };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
     document.documentElement.classList.add("nf-col-resizing");
   };
 
@@ -360,7 +364,7 @@ export default function PageView({ page }) {
 
   return (
     <PageUiContext.Provider value={uiValue}>
-      <div className="min-h-full flex flex-col" onMouseDownCapture={onMouseDownCapture}>
+      <div className="min-h-full flex flex-col" onPointerDownCapture={onPointerDownCapture}>
         <header className="sticky top-0 z-30 bg-paper/90 backdrop-blur px-6 h-12 flex items-center gap-1 text-[13px] text-ink-light shrink-0">
           {crumbs.map((c, i) => (
             <React.Fragment key={c.id}>
@@ -381,7 +385,7 @@ export default function PageView({ page }) {
         <div
           ref={containerRef}
           className={`group/head relative w-full pt-8 pb-4 flex-1 flex flex-col ${
-            margins ? "" : "max-w-3xl mx-auto px-10"
+            margins ? "" : "max-w-3xl mx-auto px-4 sm:px-10"
           }`}
           style={margins ? { paddingLeft: margins.left, paddingRight: margins.right } : undefined}
         >
@@ -390,7 +394,7 @@ export default function PageView({ page }) {
             className="nf-page-margin"
             style={{ left: (margins ? margins.left : 40) - 7 }}
             data-col-resize="1"
-            onMouseDown={(e) => startPageMargin(e, "left")}
+            onPointerDown={(e) => startPageMargin(e, "left")}
             onDoubleClick={resetPageMargins}
             title="Marge gauche de la page — double-clic : réinitialiser"
           />
@@ -398,7 +402,7 @@ export default function PageView({ page }) {
             className="nf-page-margin"
             style={{ right: (margins ? margins.right : 40) - 7 }}
             data-col-resize="1"
-            onMouseDown={(e) => startPageMargin(e, "right")}
+            onPointerDown={(e) => startPageMargin(e, "right")}
             onDoubleClick={resetPageMargins}
             title="Marge droite de la page — double-clic : réinitialiser"
           />

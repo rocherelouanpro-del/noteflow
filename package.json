@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "android:apk": "bash scripts/android.sh build --apk --debug --target aarch64",
+    "android:dev": "bash scripts/android.sh dev",
+    "android:release": "bash scripts/android.sh build --apk"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",

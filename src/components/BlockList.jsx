@@ -183,13 +183,13 @@ function BlockShell({ page, parentBlockId, parentType, block, index, children })
       }
     };
     const onUp = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
       document.documentElement.classList.remove("nf-col-resizing");
       updateBlock(page.id, parentBlockId, block.id, side === "left" ? { ml: nml } : { mr: nmr });
     };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
     document.documentElement.classList.add("nf-col-resizing");
   };
 
@@ -211,7 +211,7 @@ function BlockShell({ page, parentBlockId, parentType, block, index, children })
           onClick={(e) => {
             if (!wasDrag()) openMenu(e);
           }}
-          onMouseDown={(e) => {
+          onPointerDown={(e) => {
             if (e.button !== 0) return;
             e.preventDefault(); // pas de sélection de texte pendant le glissé
             // Sélection multiple : glisser une poignée déplace tous les blocs
@@ -252,7 +252,7 @@ function BlockShell({ page, parentBlockId, parentType, block, index, children })
             className="nf-margin-handle"
             style={{ left: -5 }}
             data-col-resize="1"
-            onMouseDown={(e) => startBlockMargin(e, "left")}
+            onPointerDown={(e) => startBlockMargin(e, "left")}
             onDoubleClick={(e) => {
               e.stopPropagation();
               updateBlock(page.id, parentBlockId, block.id, { ml: 0 });
@@ -263,7 +263,7 @@ function BlockShell({ page, parentBlockId, parentType, block, index, children })
             className="nf-margin-handle"
             style={{ right: -5 }}
             data-col-resize="1"
-            onMouseDown={(e) => startBlockMargin(e, "right")}
+            onPointerDown={(e) => startBlockMargin(e, "right")}
             onDoubleClick={(e) => {
               e.stopPropagation();
               updateBlock(page.id, parentBlockId, block.id, { mr: 0 });
@@ -600,16 +600,16 @@ function ColumnGap({ page, parentBlockId, colsBlock, index }) {
       rightEl.style.flexGrow = rg;
     };
     const onUp = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
       document.documentElement.classList.remove("nf-col-resizing");
       setColumnGrow(page.id, parentBlockId, colsBlock.id, {
         [leftCol.id]: lg,
         [rightCol.id]: rg,
       });
     };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
     document.documentElement.classList.add("nf-col-resizing");
   };
 
@@ -617,7 +617,7 @@ function ColumnGap({ page, parentBlockId, colsBlock, index }) {
     <div
       ref={gapRef}
       data-col-resize="1"
-      onMouseDown={startResize}
+      onPointerDown={startResize}
       className="group/gap w-6 shrink-0 self-stretch flex justify-center cursor-col-resize"
       title="Glisser pour redimensionner les colonnes"
     >
@@ -654,13 +654,13 @@ function ImageBlock({ page, parentBlockId, block }) {
       imgRef.current.style.width = finalW + "px";
     };
     const onUp = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
       document.documentElement.classList.remove("nf-col-resizing");
       updateBlock(page.id, parentBlockId, block.id, { width: finalW });
     };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
     document.documentElement.classList.add("nf-col-resizing");
   };
 
@@ -675,10 +675,10 @@ function ImageBlock({ page, parentBlockId, block }) {
           className="block max-w-full rounded-md select-none"
           style={block.width ? { width: block.width } : { maxHeight: 480 }}
         />
-        <span className="nf-img-handle left" data-col-resize="1" onMouseDown={(e) => startResize(e, -1)} />
-        <span className="nf-img-handle right" data-col-resize="1" onMouseDown={(e) => startResize(e, 1)} />
-        <span className="nf-img-corner bl" data-col-resize="1" onMouseDown={(e) => startResize(e, -1)} />
-        <span className="nf-img-corner br" data-col-resize="1" onMouseDown={(e) => startResize(e, 1)} />
+        <span className="nf-img-handle left" data-col-resize="1" onPointerDown={(e) => startResize(e, -1)} />
+        <span className="nf-img-handle right" data-col-resize="1" onPointerDown={(e) => startResize(e, 1)} />
+        <span className="nf-img-corner bl" data-col-resize="1" onPointerDown={(e) => startResize(e, -1)} />
+        <span className="nf-img-corner br" data-col-resize="1" onPointerDown={(e) => startResize(e, 1)} />
       </span>
     </div>
   );

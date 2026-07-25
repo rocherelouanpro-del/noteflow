@@ -433,3 +433,53 @@ body {
 *::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* ==== Adaptation tactile (Android) =======================================
+   Deux problèmes n'existent QUE sans souris :
+   1. le navigateur convertit tout glissé du doigt en défilement — une poignée
+      de déplacement doit donc lui confisquer le geste (`touch-action: none`) ;
+   2. les contrôles révélés au survol sont inatteignables : sans souris il n'y
+      a pas de survol, donc pas de poignées, donc plus rien de déplaçable.
+   `hover: none` cible les appareils dont le pointeur principal ne survole
+   pas (téléphones, tablettes) sans jamais toucher au rendu sur ordinateur. */
+
+[data-block-handle],
+.nf-col-resizer,
+.nf-sidebar-resizer,
+.nf-margin-handle,
+.nf-page-margin,
+.nf-img-handle,
+.nf-img-corner,
+.nf-col-grip,
+.nf-row-grip {
+  touch-action: none;
+}
+
+@media (hover: none) {
+  /* Poignées affichées en permanence, en discret : sans survol elles seraient
+     invisibles ET inutilisables. Le `!important` est nécessaire pour battre
+     les utilitaires `opacity-0 group-hover:*` posés dans le JSX. */
+  [data-block-handle],
+  .nf-col-grip,
+  .nf-row-grip,
+  .nf-img-handle,
+  .nf-img-corner,
+  .nf-margin-handle {
+    opacity: 0.4 !important;
+  }
+
+  /* Cible tactile élargie sans changer l'apparence : Android recommande
+     48dp, or la poignée ne fait que 20×24px. Le pseudo-élément agrandit la
+     zone sensible autour d'elle. */
+  [data-block-handle]::after {
+    content: "";
+    position: absolute;
+    inset: -12px -10px;
+  }
+
+  /* La barre latérale se redimensionne mal au doigt et vole de la place :
+     on masque sa poignée (le bouton replier/déplier reste, lui, disponible). */
+  .nf-sidebar-resizer {
+    display: none;
+  }
+}

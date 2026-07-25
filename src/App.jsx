@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { PanelLeft } from "lucide-react";
 import { useStore } from "./store";
 import Sidebar from "./components/Sidebar";
@@ -9,6 +9,28 @@ import FloatingToolbar from "./components/FloatingToolbar";
 
 export default function App() {
   const { state, view, toggleSidebar } = useStore();
+
+  // Écran étroit (téléphone) : la barre latérale fixe mangerait la moitié de
+  // la largeur. Elle passe donc en panneau superposé, masqué par défaut et
+  // refermé après navigation. On n'écrit PAS dans `ui.sidebarCollapsed` :
+  // la préférence de l'utilisateur sur ordinateur doit rester intacte.
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 768
+  );
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const sync = () => setNarrow(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  // changement de page sur mobile → on referme le panneau
+  useEffect(() => {
+    if (narrow) setMobileOpen(false);
+  }, [view.type, view.id, narrow]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", state?.theme === "dark");
@@ -23,20 +45,39 @@ export default function App() {
   }
 
   const collapsed = !!state.ui?.sidebarCollapsed;
+  const showSidebar = narrow ? mobileOpen : !collapsed;
+  const showOpenButton = narrow ? !mobileOpen : collapsed;
+  const openSidebar = () => (narrow ? setMobileOpen(true) : toggleSidebar());
 
   return (
     <div className="relative flex h-full overflow-hidden">
-      {!collapsed && <Sidebar />}
-      {collapsed && (
+      {showSidebar &&
+        (narrow ? (
+          // superposition : voile cliquable + panneau au-dessus du contenu
+          <>
+            <div
+              className="absolute inset-0 z-40 bg-black/40"
+              onClick={() => setMobileOpen(false)}
+            />
+            <div className="absolute inset-y-0 left-0 z-50 flex">
+              <Sidebar />
+            </div>
+          </>
+        ) : (
+          <Sidebar />
+        ))}
+      {showOpenButton && (
         <button
           className="absolute left-2 top-2 z-40 flex items-center justify-center w-8 h-8 rounded-md bg-card/90 backdrop-blur border border-line shadow-sm text-ink-faint hover:text-ink hover:bg-hover transition-colors"
-          onClick={toggleSidebar}
+          onClick={openSidebar}
           title="Afficher la barre latérale"
         >
           <PanelLeft size={17} />
         </button>
       )}
-      <main className={`flex-1 min-w-0 overflow-y-auto ${collapsed ? "pl-11" : ""}`}>
+      <main
+        className={`flex-1 min-w-0 overflow-y-auto ${showOpenButton ? "pl-11" : ""}`}
+      >
         {view.type === "page" && state.pages[view.id] && (
           <PageView key={view.id} page={state.pages[view.id]} />
         )}

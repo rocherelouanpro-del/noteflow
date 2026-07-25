@@ -89,12 +89,21 @@ function hitTest(x, y) {
   return null;
 }
 
-// Amorce un drag potentiel au mousedown sur une poignée. Le drag ne devient
-// effectif qu'au-delà de 4px de mouvement — en deçà c'est un simple clic
+// Amorce un drag potentiel au pointerdown sur une poignée. Le drag ne devient
+// effectif qu'au-delà du seuil de mouvement — en deçà c'est un simple clic
 // (le menu du bloc reste accessible). Échap annule.
+//
+// Événements POINTEUR (et non souris) : un seul chemin de code couvre la
+// souris, le doigt et le stylet — indispensable sur Android. Les poignées
+// portent `touch-action: none` (cf. index.css) sans quoi le navigateur
+// confisquerait le geste pour faire défiler la page.
 export function startPointerDrag(e, info) {
   const startX = e.clientX;
   const startY = e.clientY;
+  const pointerId = e.pointerId;
+  const isTouch = e.pointerType === "touch";
+  // un doigt tremble plus qu'une souris : seuil de déclenchement plus large
+  const THRESHOLD = isTouch ? 10 : 4;
   let active = false;
   let ghost = null;
   const scroller = findScroller(info.el);
@@ -111,21 +120,28 @@ export function startPointerDrag(e, info) {
   };
 
   const onMove = (ev) => {
-    // bouton relâché hors fenêtre (mouseup manqué) : on annule proprement
-    if (!(ev.buttons & 1)) return finish(false, ev);
+    if (ev.pointerId !== pointerId) return; // un 2e doigt ne pilote pas le drag
+    // bouton relâché hors fenêtre (pointerup manqué) : on annule proprement.
+    // Ne vaut que pour la souris — au doigt, `buttons` retombe parfois à 0
+    // entre deux événements, et c'est `pointercancel` qui fait foi.
+    if (!isTouch && !(ev.buttons & 1)) return finish(false, ev);
     if (!active) {
-      if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) < 4) return;
+      if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) < THRESHOLD) return;
       activate();
     }
     ev.preventDefault();
-    ghost.style.transform = `translate(${ev.clientX + 14}px, ${ev.clientY + 10}px)`;
+    // au doigt, on décale davantage le fantôme pour qu'il ne soit pas masqué
+    const dx = isTouch ? 18 : 14;
+    const dy = isTouch ? -28 : 10;
+    ghost.style.transform = `translate(${ev.clientX + dx}px, ${ev.clientY + dy}px)`;
     autoScroll(scroller, ev.clientY);
     if (!hitTest(ev.clientX, ev.clientY)) clearCurrent();
   };
 
   const finish = (drop, ev) => {
-    window.removeEventListener("mousemove", onMove, true);
-    window.removeEventListener("mouseup", onUp, true);
+    window.removeEventListener("pointermove", onMove, true);
+    window.removeEventListener("pointerup", onUp, true);
+    window.removeEventListener("pointercancel", onCancel, true);
     window.removeEventListener("keydown", onKey, true);
     if (!active) return;
     const tgt = drop ? hitTest(ev.clientX, ev.clientY) : null;
@@ -142,14 +158,24 @@ export function startPointerDrag(e, info) {
       didDrag = false;
     }, 0);
   };
-  const onUp = (ev) => finish(true, ev);
+  const onUp = (ev) => {
+    if (ev.pointerId !== pointerId) return;
+    finish(true, ev);
+  };
+  // Le système reprend la main sur le geste (appel entrant, geste système
+  // Android, doigt sorti de l'écran…) : on annule sans rien déposer.
+  const onCancel = (ev) => {
+    if (ev.pointerId !== pointerId) return;
+    finish(false, ev);
+  };
   const onKey = (ev) => {
     if (ev.key === "Escape") {
       ev.stopPropagation();
       finish(false, ev);
     }
   };
-  window.addEventListener("mousemove", onMove, true);
-  window.addEventListener("mouseup", onUp, true);
+  window.addEventListener("pointermove", onMove, true);
+  window.addEventListener("pointerup", onUp, true);
+  window.addEventListener("pointercancel", onCancel, true);
   window.addEventListener("keydown", onKey, true);
 }
