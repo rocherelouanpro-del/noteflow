@@ -78,16 +78,47 @@ export function newBlock(type = "paragraph", extra = {}) {
   return { ...base, ...extra };
 }
 
+// Couleurs d'étiquettes : fond saturé, écriture TOUJOURS blanche.
+// Chaque fond a un contraste ≥ 4,5:1 avec le blanc (WCAG AA) — vérifié.
+export const TAG_TEXT = "#ffffff";
+
 export const TAG_PALETTE = [
-  { bg: "#fee2e2", text: "#b91c1c" },
-  { bg: "#ffedd5", text: "#c2410c" },
-  { bg: "#fef9c3", text: "#a16207" },
-  { bg: "#dcfce7", text: "#15803d" },
-  { bg: "#dbeafe", text: "#1d4ed8" },
-  { bg: "#ede9fe", text: "#6d28d9" },
-  { bg: "#fce7f3", text: "#be185d" },
-  { bg: "#e7e5e4", text: "#57534e" },
+  { name: "Rouge", bg: "#dc2626", text: TAG_TEXT },
+  { name: "Orange", bg: "#c2410c", text: TAG_TEXT },
+  { name: "Ambre", bg: "#a16207", text: TAG_TEXT },
+  { name: "Vert", bg: "#15803d", text: TAG_TEXT },
+  { name: "Bleu", bg: "#2563eb", text: TAG_TEXT },
+  { name: "Violet", bg: "#7c3aed", text: TAG_TEXT },
+  { name: "Rose", bg: "#db2777", text: TAG_TEXT },
+  { name: "Gris", bg: "#64748b", text: TAG_TEXT },
 ];
+
+// Ancienne palette pastel (fond clair + écriture foncée), même ordre de teintes
+// que la nouvelle : sert à convertir À L'AFFICHAGE les étiquettes déjà créées,
+// sans réécrire les données de l'utilisateur.
+const LEGACY_TAG_BG = [
+  "#fee2e2", "#ffedd5", "#fef9c3", "#dcfce7",
+  "#dbeafe", "#ede9fe", "#fce7f3", "#e7e5e4",
+];
+
+// Renvoie la couleur d'affichage d'une étiquette : toujours du blanc sur un
+// fond de la palette. Une couleur pastel héritée est remontée sur la teinte
+// correspondante ; une couleur inconnue retombe sur le gris.
+export function tagColor(color) {
+  if (!color) return TAG_PALETTE[TAG_PALETTE.length - 1];
+  const bg = String(color.bg || "").toLowerCase();
+  const current = TAG_PALETTE.find((p) => p.bg === bg);
+  if (current) return current;
+  const legacy = LEGACY_TAG_BG.indexOf(bg);
+  if (legacy !== -1) return TAG_PALETTE[legacy];
+  return TAG_PALETTE[TAG_PALETTE.length - 1];
+}
+
+// Style inline prêt à poser sur une puce d'étiquette.
+export const tagStyle = (color) => ({
+  backgroundColor: tagColor(color).bg,
+  color: TAG_TEXT,
+});
 
 export function newTableData() {
   return {

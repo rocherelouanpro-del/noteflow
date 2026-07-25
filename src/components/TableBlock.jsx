@@ -15,9 +15,10 @@ import {
   GripVertical,
   GripHorizontal,
   FileText,
+  ChevronLeft,
 } from "lucide-react";
 import { useStore } from "../store";
-import { uid, TAG_PALETTE } from "../utils";
+import { uid, TAG_PALETTE, tagStyle, tagColor } from "../utils";
 import PageIcon from "./PageIcon";
 import PagePicker from "./PagePicker";
 
@@ -553,7 +554,7 @@ function Cell({ col, row, mut, openMenuAt, pageId }) {
               <span
                 key={id}
                 className="px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap"
-                style={{ backgroundColor: o.color.bg, color: o.color.text }}
+                style={tagStyle(o.color)}
               >
                 {o.label}
               </span>
@@ -722,10 +723,40 @@ function CellPageMenu({ pos, query, pages, onPick, onNew, onClose }) {
 
 function TagPopover({ menu, col, row, mut }) {
   const [input, setInput] = useState("");
+  const [editId, setEditId] = useState(null); // étiquette en cours de modification
+  const origLabel = useRef(""); // nom d'avant l'édition (restauré si vidé)
   if (!row) return null;
   const raw = row.cells[col.id];
   const ids = Array.isArray(raw) ? raw : [];
   const options = col.options || [];
+
+  // Modifie une étiquette DANS la colonne : le changement se propage
+  // automatiquement à toutes les lignes qui la portent (elles ne stockent
+  // qu'un id).
+  const editOption = (optId, fn, coalesceKey) =>
+    mut((b) => {
+      const c = b.columns.find((x) => x.id === col.id);
+      const o = c?.options?.find((x) => x.id === optId);
+      if (o) fn(o);
+    }, coalesceKey);
+
+  const renameTag = (optId, label) =>
+    editOption(optId, (o) => (o.label = label), `tag:${optId}`);
+
+  const recolorTag = (optId, color) =>
+    editOption(optId, (o) => (o.color = { ...color }));
+
+  const openEdit = (o) => {
+    origLabel.current = o.label;
+    setEditId(o.id);
+  };
+
+  const closeEdit = () => {
+    const cur = options.find((o) => o.id === editId);
+    // Une étiquette sans nom serait invisible : on remet l'ancien.
+    if (cur && !cur.label.trim()) renameTag(cur.id, origLabel.current);
+    setEditId(null);
+  };
 
   const toggleTag = (optId) =>
     mut((b) => {
@@ -744,7 +775,13 @@ function TagPopover({ menu, col, row, mut }) {
     if (existing) {
       if (!ids.includes(existing.id)) toggleTag(existing.id);
     } else {
-      const opt = { id: uid(), label, color: TAG_PALETTE[options.length % TAG_PALETTE.length] };
+      // Copie de la couleur (jamais la référence du module, qui serait alors
+      // partagée par toutes les étiquettes de la même teinte).
+      const opt = {
+        id: uid(),
+        label,
+        color: { ...TAG_PALETTE[options.length % TAG_PALETTE.length] },
+      };
       mut((b) => {
         const c = b.columns.find((x) => x.id === col.id);
         if (!c) return;
@@ -757,6 +794,47 @@ function TagPopover({ menu, col, row, mut }) {
     }
     setInput("");
   };
+
+  // Mode « modifier une étiquette » : renommage + choix de la couleur de fond.
+  const editing = options.find((o) => o.id === editId);
+  if (editing) {
+    const curBg = tagColor(editing.color).bg;
+    return (
+      <div className="menu-panel fixed w-56" style={{ left: menu.x, top: menu.y }}>
+        <button className="menu-item text-ink-light" onClick={closeEdit}>
+          <ChevronLeft size={14} /> Retour
+        </button>
+        <div className="px-2 py-1.5">
+          <input
+            autoFocus
+            value={editing.label}
+            onChange={(e) => renameTag(editing.id, e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === "Escape") closeEdit();
+            }}
+            placeholder="Nom de l'étiquette"
+            className="w-full border border-line rounded px-2 py-1 text-[13px] outline-none focus:border-accent bg-transparent"
+          />
+        </div>
+        <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+          Couleur
+        </div>
+        <div className="grid grid-cols-4 gap-1.5 px-2 pb-2">
+          {TAG_PALETTE.map((p) => (
+            <button
+              key={p.bg}
+              title={p.name}
+              onClick={() => recolorTag(editing.id, p)}
+              className="h-7 rounded flex items-center justify-center ring-offset-1 ring-offset-card hover:ring-2 hover:ring-ink-faint"
+              style={{ backgroundColor: p.bg }}
+            >
+              {curBg === p.bg && <Check size={14} color="#fff" />}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="menu-panel fixed w-56" style={{ left: menu.x, top: menu.y }}>
@@ -773,15 +851,29 @@ function TagPopover({ menu, col, row, mut }) {
       {options
         .filter((o) => !input.trim() || o.label.toLowerCase().includes(input.toLowerCase()))
         .map((o) => (
-          <button key={o.id} className="menu-item justify-between" onClick={() => toggleTag(o.id)}>
-            <span
-              className="px-1.5 py-0.5 rounded text-xs font-medium"
-              style={{ backgroundColor: o.color.bg, color: o.color.text }}
+          // Le « ⋯ » est posé PAR-DESSUS la ligne (et non dedans) : un bouton
+          // ne peut pas en contenir un autre.
+          <div key={o.id} className="relative group/tag">
+            <button
+              className="menu-item justify-between pr-14"
+              onClick={() => toggleTag(o.id)}
             >
-              {o.label}
-            </span>
-            {ids.includes(o.id) && <Check size={14} className="text-accent" />}
-          </button>
+              <span
+                className="px-1.5 py-0.5 rounded text-xs font-medium truncate"
+                style={tagStyle(o.color)}
+              >
+                {o.label}
+              </span>
+              {ids.includes(o.id) && <Check size={14} className="text-accent shrink-0" />}
+            </button>
+            <button
+              title="Modifier l'étiquette"
+              onClick={() => openEdit(o)}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded text-ink-faint opacity-0 group-hover/tag:opacity-100 hover:bg-hover hover:text-ink"
+            >
+              <MoreHorizontal size={14} />
+            </button>
+          </div>
         ))}
       {input.trim() &&
         !options.some((o) => o.label.toLowerCase() === input.trim().toLowerCase()) && (
