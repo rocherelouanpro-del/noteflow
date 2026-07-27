@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Type,
   Hash,
@@ -16,6 +16,8 @@ import {
   GripHorizontal,
   FileText,
   ChevronLeft,
+  WrapText,
+  ArrowRight,
 } from "lucide-react";
 import { useStore } from "../store";
 import { uid, TAG_PALETTE, tagStyle, tagColor } from "../utils";
@@ -30,6 +32,15 @@ const COL_TYPES = [
 ];
 
 const typeIcon = (t) => COL_TYPES.find((c) => c.id === t)?.icon || Type;
+
+// Retour à la ligne d'une cellule texte. Réglage par COLONNE (`col.wrap`,
+// actif par défaut), qu'une case peut surcharger individuellement
+// (`row.wrap[colId]`). `undefined` = « suit la colonne ».
+function cellWraps(col, row) {
+  const perCell = row?.wrap?.[col.id];
+  if (typeof perCell === "boolean") return perCell;
+  return col.wrap !== false;
+}
 
 // Largeur des colonnes (façon Excel/Notion)
 const DEFAULT_COL_W = 180; // colonne sans largeur définie
@@ -209,6 +220,47 @@ export default function TableBlock({ page, parentBlockId, block }) {
     );
   };
 
+  // Clic droit (= Ctrl+clic sur Mac) sur une case : menu ancré sur le pointeur.
+  const openCellMenu = (e, colId, rowId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setMenu({
+      kind: "cell",
+      colId,
+      rowId,
+      x: Math.min(e.clientX, window.innerWidth - 260),
+      y: Math.min(e.clientY, window.innerHeight - 250),
+    });
+  };
+
+  // `null` retire la surcharge : la case suit de nouveau sa colonne.
+  const setCellWrap = (rowId, colId, value) =>
+    mut((b) => {
+      const r = b.rows.find((x) => x.id === rowId);
+      if (!r) return;
+      if (value === null) {
+        if (!r.wrap) return;
+        delete r.wrap[colId];
+        if (!Object.keys(r.wrap).length) delete r.wrap;
+      } else {
+        r.wrap = { ...(r.wrap || {}), [colId]: value };
+      }
+    });
+
+  // Régler la colonne efface les surcharges de ses cases, sinon le choix
+  // resterait sans effet visible là où une case a été réglée à la main.
+  const setColWrap = (colId, value) =>
+    mut((b) => {
+      const c = b.columns.find((x) => x.id === colId);
+      if (c) c.wrap = value;
+      for (const r of b.rows) {
+        if (r.wrap && colId in r.wrap) {
+          delete r.wrap[colId];
+          if (!Object.keys(r.wrap).length) delete r.wrap;
+        }
+      }
+    });
+
   const sortedRows = useMemo(() => {
     const rows = [...block.rows];
     if (!block.sort) return rows;
@@ -376,6 +428,7 @@ export default function TableBlock({ page, parentBlockId, block }) {
                     row={row}
                     mut={mut}
                     openMenuAt={openMenuAt}
+                    openCellMenu={openCellMenu}
                     pageId={page.id}
                   />
                 ))}
@@ -501,6 +554,25 @@ export default function TableBlock({ page, parentBlockId, block }) {
               {menuCol.type === t.id && <Check size={14} className="ml-auto text-accent" />}
             </button>
           ))}
+          {menuCol.type === "text" && (
+            <>
+              <div className="my-1 border-t border-line" />
+              <button
+                className="menu-item justify-between"
+                onClick={() => {
+                  setColWrap(menuCol.id, menuCol.wrap === false);
+                  setMenu(null);
+                }}
+              >
+                <span className="flex items-center gap-2.5">
+                  <WrapText size={14} /> Revenir à la ligne
+                </span>
+                {menuCol.wrap !== false && (
+                  <Check size={14} className="text-accent shrink-0" />
+                )}
+              </button>
+            </>
+          )}
           <div className="my-1 border-t border-line" />
           <button
             className="menu-item text-red-500"
@@ -522,13 +594,101 @@ export default function TableBlock({ page, parentBlockId, block }) {
           mut={mut}
         />
       )}
+
+      {menu?.kind === "cell" && menuCol && (
+        <CellMenu
+          menu={menu}
+          col={menuCol}
+          row={block.rows.find((r) => r.id === menu.rowId)}
+          setCellWrap={setCellWrap}
+          setColWrap={setColWrap}
+          close={() => setMenu(null)}
+        />
+      )}
     </div>
   );
 }
 
-function Cell({ col, row, mut, openMenuAt, pageId }) {
+// Menu au clic droit (Ctrl+clic sur Mac) d'une case : réglage du retour à la
+// ligne, pour la case seule ou pour toute sa colonne.
+function CellMenu({ menu, col, row, setCellWrap, setColWrap, close }) {
+  if (!row) return null;
+  const effectif = cellWraps(col, row);
+  const surcharge = typeof row.wrap?.[col.id] === "boolean";
+  const colWrap = col.wrap !== false;
+
+  const Ligne = ({ icon: Icon, label, actif, onClick }) => (
+    <button
+      className="menu-item justify-between"
+      onClick={() => {
+        onClick();
+        close();
+      }}
+    >
+      <span className="flex items-center gap-2.5">
+        <Icon size={14} /> {label}
+      </span>
+      {actif && <Check size={14} className="text-accent shrink-0" />}
+    </button>
+  );
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40" onMouseDown={close} />
+      <div className="menu-panel fixed w-64 z-50" style={{ left: menu.x, top: menu.y }}>
+        <div className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+          Cette case
+        </div>
+        <Ligne
+          icon={WrapText}
+          label="Revenir à la ligne"
+          actif={effectif}
+          onClick={() => setCellWrap(row.id, col.id, true)}
+        />
+        <Ligne
+          icon={ArrowRight}
+          label="Garder sur une ligne"
+          actif={!effectif}
+          onClick={() => setCellWrap(row.id, col.id, false)}
+        />
+        {surcharge && (
+          <button
+            className="menu-item text-ink-faint"
+            onClick={() => {
+              setCellWrap(row.id, col.id, null);
+              close();
+            }}
+          >
+            <ChevronLeft size={14} /> Suivre la colonne
+          </button>
+        )}
+
+        <div className="my-1 border-t border-line" />
+        <div className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+          Colonne « {col.name || "Sans titre"} »
+        </div>
+        <Ligne
+          icon={WrapText}
+          label="Revenir à la ligne"
+          actif={colWrap}
+          onClick={() => setColWrap(col.id, true)}
+        />
+        <Ligne
+          icon={ArrowRight}
+          label="Garder sur une ligne"
+          actif={!colWrap}
+          onClick={() => setColWrap(col.id, false)}
+        />
+      </div>
+    </>
+  );
+}
+
+function Cell({ col, row, mut, openMenuAt, openCellMenu, pageId }) {
   const { state, setView, createPage } = useStore();
   const [pmenu, setPmenu] = useState(null); // { x, y, query } — menu « /page »
+  // Retour à la ligne : réglage de la colonne, qu'une case peut surcharger.
+  const wrapOn = cellWraps(col, row);
 
   const setCell = (value) =>
     mut((b) => {
@@ -633,27 +793,30 @@ function Cell({ col, row, mut, openMenuAt, pageId }) {
   };
 
   return (
-    <td className="relative border-r border-line/60 last:border-r-0">
-      <input
+    <td
+      className="relative border-r border-line/60 last:border-r-0 align-top"
+      onContextMenu={(e) => openCellMenu(e, col.id, row.id)}
+    >
+      <CellText
         value={typeof v === "string" ? v : ""}
-        onChange={(e) => {
-          const raw = e.target.value;
+        wrap={wrapOn}
+        onChange={(raw, el) => {
           setCell(raw);
           // « / » en début de cellule → menu d'insertion de lien de page
           if (raw.startsWith("/")) {
-            const r = e.target.getBoundingClientRect();
+            const r = el.getBoundingClientRect();
             setPmenu({ x: r.left, y: r.bottom + 4, query: raw.slice(1) });
           } else {
             setPmenu(null);
           }
         }}
-        onKeyDown={(e) => {
-          if (pmenu && e.key === "Escape") {
-            e.preventDefault();
+        onEscape={() => {
+          if (pmenu) {
             setPmenu(null);
+            return true; // Échap consommé par le menu
           }
+          return false;
         }}
-        className="w-full bg-transparent px-2 py-1.5 outline-none"
       />
       {pmenu && (
         <CellPageMenu
@@ -668,6 +831,80 @@ function Cell({ col, row, mut, openMenuAt, pageId }) {
     </td>
   );
 }
+
+// Champ d'une cellule texte. C'est un <textarea> et non un <input> : un input
+// est mono-ligne par construction et ne peut PAS revenir à la ligne.
+//
+// Deux modes, selon `wrap` :
+//  • true  — le texte revient à la ligne et la case grandit (hauteur = contenu) ;
+//  • false — la case garde la hauteur d'une ligne quel que soit le texte. Au
+//            clic, le champ se déploie PAR-DESSUS les cases voisines (façon
+//            Excel) pour montrer l'intégralité du texte sans déformer la ligne.
+function CellText({ value, wrap, onChange, onEscape }) {
+  const ref = useRef(null);
+  const [editing, setEditing] = useState(false);
+  const [clipped, setClipped] = useState(false); // du texte est masqué à droite
+
+  // Le déploiement montre tout ; sinon on suit le réglage.
+  const expanded = wrap || editing;
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (expanded) {
+      // hauteur = contenu (remise à zéro d'abord, sinon scrollHeight ne rétrécit jamais)
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+      setClipped(false);
+    } else {
+      el.style.height = "";
+      setClipped(el.scrollWidth > el.clientWidth + 1);
+    }
+  }, [value, expanded]);
+
+  return (
+    <textarea
+      ref={ref}
+      rows={1}
+      value={value}
+      spellCheck={false}
+      onChange={(e) => onChange(e.target.value, e.target)}
+      onFocus={() => setEditing(true)}
+      onBlur={() => setEditing(false)}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          if (onEscape()) {
+            e.preventDefault();
+            return;
+          }
+          e.currentTarget.blur();
+          return;
+        }
+        // Un retour à la ligne n'a de sens que là où il peut s'afficher :
+        // dans une colonne qui ne s'agrandit pas, Entrée valide et sort.
+        if (e.key === "Enter" && !e.shiftKey && !wrap) {
+          e.preventDefault();
+          e.currentTarget.blur();
+        }
+      }}
+      className={`block w-full px-2 py-1.5 outline-none resize-none overflow-hidden ${
+        expanded ? "whitespace-pre-wrap break-words" : "whitespace-pre"
+      } ${
+        // Déployé au-dessus des cases voisines : le fond DOIT être opaque.
+        // `bg-transparent` et `bg-card` ne peuvent pas cohabiter dans la liste
+        // de classes — à spécificité égale c'est l'ordre du CSS généré qui
+        // tranche, pas celui de la liste, et le texte du dessous transparaît.
+        !wrap && editing
+          ? "absolute left-0 right-0 top-0 z-30 bg-card rounded shadow-lg ring-1 ring-line"
+          : "bg-transparent"
+      }`}
+      style={clipped ? { maskImage: FADE, WebkitMaskImage: FADE } : undefined}
+    />
+  );
+}
+
+// Dégradé de fin de ligne : signale qu'il reste du texte au-delà du bord.
+const FADE = "linear-gradient(to right, #000 calc(100% - 20px), transparent)";
 
 // Menu déclenché par « / » dans une cellule texte : une commande « Lien vers une
 // page » puis un sélecteur de page (recherche + liste). Sobre, en fixed.
