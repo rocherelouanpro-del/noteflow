@@ -49,6 +49,31 @@ body {
   font-size: 15px;
 }
 
+/* ---- iPhone / iPad -----------------------------------------------------
+   L'app occupe tout l'écran (viewport-fit=cover) : c'est donc à nous de
+   dégager l'encoche, la Dynamic Island et la barre d'accueil. Les valeurs
+   valent 0 partout ailleurs, ce bloc est donc sans effet sur ordinateur. */
+#root {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+html,
+body {
+  /* pas d'effet élastique en bout de course : dans une app, ce rebond
+     donne l'impression que l'interface se décolle */
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Le rectangle gris au toucher trahit la page web ; les états de survol et
+   d'activation de l'app suffisent. */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
 ::selection {
   background: rgba(35, 131, 226, 0.28);
 }

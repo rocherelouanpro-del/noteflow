@@ -1,0 +1,460 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1BC2A8151B63EE3ACBA0452B /* libapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B2F61651205706517DCAD809 /* libapp.a */; };
+		1F61301ACF7AB8D086E3F775 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDBA87B94D649DCA865CF39D /* MetalKit.framework */; };
+		5EE4CB9918BD6DCCAEED1E6B /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0199C44EFE33117E9463AA3 /* QuartzCore.framework */; };
+		5F366B4444C354622E986451 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1966CF73CA3F79C57020256E /* WebKit.framework */; };
+		620663B2A34E80387AD8750D /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C52AE7C94FCF9F6309905C0 /* Security.framework */; };
+		70CD2F31B2428F969548C407 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7E2F8814FCB8753F93A86DBD /* main.mm */; };
+		9069A49DAAAF96DBB663A874 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 819D4855CF0E0025C24E5DF1 /* Assets.xcassets */; };
+		A27F2FB8E70A75DFDC3F8E40 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 5F339747B2DD870AB7FDF877 /* assets */; };
+		D478569359EDA6A6E4299BF6 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AD3C0A1F653341CE11E84A25 /* Metal.framework */; };
+		DA1AC3744E9D797C6781CDD8 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D7E78F09DB604FF2BB7E2C3 /* CoreGraphics.framework */; };
+		EEFE9E388F14F9916233734F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AFE542E10DDA3E1D49269A6F /* LaunchScreen.storyboard */; };
+		FDCF3548B8D856602845EB1D /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B6BE7A115737B28577852F12 /* UIKit.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1480705803A6A426CA8C47A6 /* bindings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bindings.h; sourceTree = "<group>"; };
+		1966CF73CA3F79C57020256E /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		1D7E78F09DB604FF2BB7E2C3 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		29AB9FCE1D1DFF3EABB02436 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		5F339747B2DD870AB7FDF877 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
+		7E2F8814FCB8753F93A86DBD /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
+		819D4855CF0E0025C24E5DF1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8C52AE7C94FCF9F6309905C0 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		92B50DC555334DC79B56B83D /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
+		AD3C0A1F653341CE11E84A25 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		AFE542E10DDA3E1D49269A6F /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		B2F61651205706517DCAD809 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
+		B6BE7A115737B28577852F12 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		BCCDB81B75C07C4486E100B2 /* noteflow_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = noteflow_iOS.entitlements; sourceTree = "<group>"; };
+		CDBA87B94D649DCA865CF39D /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		E442C9CD3C1E83519EC1435B /* main.rs */ = {isa = PBXFileReference; path = main.rs; sourceTree = "<group>"; };
+		F0199C44EFE33117E9463AA3 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		FB3A2D44F51839FC1C7C8AAC /* noteflow_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = noteflow_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8E3E8AC3C5CF299C748C11F5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1BC2A8151B63EE3ACBA0452B /* libapp.a in Frameworks */,
+				DA1AC3744E9D797C6781CDD8 /* CoreGraphics.framework in Frameworks */,
+				D478569359EDA6A6E4299BF6 /* Metal.framework in Frameworks */,
+				1F61301ACF7AB8D086E3F775 /* MetalKit.framework in Frameworks */,
+				5EE4CB9918BD6DCCAEED1E6B /* QuartzCore.framework in Frameworks */,
+				620663B2A34E80387AD8750D /* Security.framework in Frameworks */,
+				FDCF3548B8D856602845EB1D /* UIKit.framework in Frameworks */,
+				5F366B4444C354622E986451 /* WebKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		05192B44D677EC099E7C9951 /* noteflow_iOS */ = {
+			isa = PBXGroup;
+			children = (
+				29AB9FCE1D1DFF3EABB02436 /* Info.plist */,
+				BCCDB81B75C07C4486E100B2 /* noteflow_iOS.entitlements */,
+			);
+			path = noteflow_iOS;
+			sourceTree = "<group>";
+		};
+		1347B406D5DA88BAED5C5602 /* noteflow */ = {
+			isa = PBXGroup;
+			children = (
+				7E2F8814FCB8753F93A86DBD /* main.mm */,
+				B1B73BB7CFBBBD7372D2D11C /* bindings */,
+			);
+			path = noteflow;
+			sourceTree = "<group>";
+		};
+		3D2BCFC0C730A1427F18C6E0 /* Externals */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Externals;
+			sourceTree = "<group>";
+		};
+		7F1A6B05AC005CA0B8184C82 = {
+			isa = PBXGroup;
+			children = (
+				5F339747B2DD870AB7FDF877 /* assets */,
+				819D4855CF0E0025C24E5DF1 /* Assets.xcassets */,
+				AFE542E10DDA3E1D49269A6F /* LaunchScreen.storyboard */,
+				3D2BCFC0C730A1427F18C6E0 /* Externals */,
+				05192B44D677EC099E7C9951 /* noteflow_iOS */,
+				8E53956D07A007971E7AD108 /* Sources */,
+				FE9FD9683FA876D6966B611C /* src */,
+				E707EB2C03E1557069185349 /* Frameworks */,
+				B91161CF02DDAB5EB8A2E7FA /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		8E53956D07A007971E7AD108 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				1347B406D5DA88BAED5C5602 /* noteflow */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		B1B73BB7CFBBBD7372D2D11C /* bindings */ = {
+			isa = PBXGroup;
+			children = (
+				1480705803A6A426CA8C47A6 /* bindings.h */,
+			);
+			path = bindings;
+			sourceTree = "<group>";
+		};
+		B91161CF02DDAB5EB8A2E7FA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FB3A2D44F51839FC1C7C8AAC /* noteflow_iOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E707EB2C03E1557069185349 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1D7E78F09DB604FF2BB7E2C3 /* CoreGraphics.framework */,
+				B2F61651205706517DCAD809 /* libapp.a */,
+				AD3C0A1F653341CE11E84A25 /* Metal.framework */,
+				CDBA87B94D649DCA865CF39D /* MetalKit.framework */,
+				F0199C44EFE33117E9463AA3 /* QuartzCore.framework */,
+				8C52AE7C94FCF9F6309905C0 /* Security.framework */,
+				B6BE7A115737B28577852F12 /* UIKit.framework */,
+				1966CF73CA3F79C57020256E /* WebKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		FE9FD9683FA876D6966B611C /* src */ = {
+			isa = PBXGroup;
+			children = (
+				92B50DC555334DC79B56B83D /* lib.rs */,
+				E442C9CD3C1E83519EC1435B /* main.rs */,
+			);
+			name = src;
+			path = ../../src;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0C018D462458B42E32469924 /* noteflow_iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 35D66C845B0AB07F9A44C58E /* Build configuration list for PBXNativeTarget "noteflow_iOS" */;
+			buildPhases = (
+				6248DA6BC4D9D2A17F865111 /* Build Rust Code */,
+				230D339C81DD417E222D0B50 /* Sources */,
+				5AB080C0E5BC2D12C854D642 /* Resources */,
+				8E3E8AC3C5CF299C748C11F5 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = noteflow_iOS;
+			packageProductDependencies = (
+			);
+			productName = noteflow_iOS;
+			productReference = FB3A2D44F51839FC1C7C8AAC /* noteflow_iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5D5DD2C9A72FC4D9F954E08F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 8A57FE99F1170FF503B13CEE /* Build configuration list for PBXProject "noteflow" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 7F1A6B05AC005CA0B8184C82;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B91161CF02DDAB5EB8A2E7FA /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0C018D462458B42E32469924 /* noteflow_iOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		5AB080C0E5BC2D12C854D642 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9069A49DAAAF96DBB663A874 /* Assets.xcassets in Resources */,
+				EEFE9E388F14F9916233734F /* LaunchScreen.storyboard in Resources */,
+				A27F2FB8E70A75DFDC3F8E40 /* assets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		6248DA6BC4D9D2A17F865111 /* Build Rust Code */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build Rust Code";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a",
+				"$(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "npm run -- tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths \"${FRAMEWORK_SEARCH_PATHS:?}\" --header-search-paths \"${HEADER_SEARCH_PATHS:?}\" --gcc-preprocessor-definitions \"${GCC_PREPROCESSOR_DEFINITIONS:-}\" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		230D339C81DD417E222D0B50 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				70CD2F31B2428F969548C407 /* main.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		09016F75ED752464402FA7E0 /* release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ARCHS = (
+					arm64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = noteflow_iOS/noteflow_iOS.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_BITCODE = NO;
+				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				INFOPLIST_FILE = noteflow_iOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.elou.noteflow;
+				PRODUCT_NAME = "Noteflow";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = arm64;
+			};
+			name = release;
+		};
+		21DDD53720DF745F60466102 /* debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ARCHS = (
+					arm64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = noteflow_iOS/noteflow_iOS.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_BITCODE = NO;
+				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				INFOPLIST_FILE = noteflow_iOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.elou.noteflow;
+				PRODUCT_NAME = "Noteflow";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = arm64;
+			};
+			name = debug;
+		};
+		A90EC388B0C23DFF47680647 /* debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = debug;
+		};
+		D1CA3A801F63CDAE0CA7EBC2 /* release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		35D66C845B0AB07F9A44C58E /* Build configuration list for PBXNativeTarget "noteflow_iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				21DDD53720DF745F60466102 /* debug */,
+				09016F75ED752464402FA7E0 /* release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = debug;
+		};
+		8A57FE99F1170FF503B13CEE /* Build configuration list for PBXProject "noteflow" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A90EC388B0C23DFF47680647 /* debug */,
+				D1CA3A801F63CDAE0CA7EBC2 /* release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 5D5DD2C9A72FC4D9F954E08F /* Project object */;
+}

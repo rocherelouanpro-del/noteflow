@@ -10,7 +10,10 @@
     "tauri": "tauri",
     "android:apk": "bash scripts/android.sh build --apk --debug --target aarch64",
     "android:dev": "bash scripts/android.sh dev",
-    "android:release": "bash scripts/android.sh build --apk"
+    "android:release": "bash scripts/android.sh build --apk",
+    "ios:dev": "bash scripts/ios.sh dev",
+    "ios:sim": "bash scripts/ios.sh build --target aarch64-sim --debug",
+    "ios:xcode": "open src-tauri/gen/apple/noteflow.xcodeproj"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
