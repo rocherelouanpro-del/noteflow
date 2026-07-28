@@ -459,6 +459,15 @@ body {
   background: transparent;
 }
 
+/* Défilement horizontal sans barre visible : une barre de 10px à l'intérieur
+   d'un contrôle segmenté de 33px de haut le défigurerait. */
+.nf-noscrollbar {
+  scrollbar-width: none;
+}
+.nf-noscrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* ==== Adaptation tactile (Android) =======================================
    Deux problèmes n'existent QUE sans souris :
    1. le navigateur convertit tout glissé du doigt en défilement — une poignée

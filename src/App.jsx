@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { PanelLeft } from "lucide-react";
 import { useStore } from "./store";
+import { useNarrow } from "./useNarrow";
 import Sidebar from "./components/Sidebar";
 import PageView from "./components/PageView";
 import HabitsPage from "./components/habits/HabitsPage";
@@ -14,18 +15,8 @@ export default function App() {
   // la largeur. Elle passe donc en panneau superposé, masqué par défaut et
   // refermé après navigation. On n'écrit PAS dans `ui.sidebarCollapsed` :
   // la préférence de l'utilisateur sur ordinateur doit rester intacte.
-  const [narrow, setNarrow] = useState(
-    () => typeof window !== "undefined" && window.innerWidth < 768
-  );
+  const narrow = useNarrow();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const sync = () => setNarrow(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
 
   // changement de page sur mobile → on referme le panneau
   useEffect(() => {

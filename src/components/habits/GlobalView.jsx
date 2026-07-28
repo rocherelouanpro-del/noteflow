@@ -1,9 +1,11 @@
 import React from "react";
 import { PieChart, Flame, CalendarDays, Target } from "lucide-react";
 import { useStore } from "../../store";
+import { useNarrow } from "../../useNarrow";
 import { daysSince } from "../../utils";
 import WidgetCard from "./WidgetCard";
 import HabitTable from "./HabitTable";
+import HabitDayList from "./HabitDayList";
 import { habitStats } from "./stats";
 import { useToday } from "./useToday";
 
@@ -11,6 +13,7 @@ import { useToday } from "./useToday";
 export default function GlobalView() {
   const { state } = useStore();
   useToday(); // re-rend stats et graphiques quand le jour change
+  const narrow = useNarrow();
   const days = daysSince(state.habitStart);
 
   const totalPossible = days.length * state.habits.length;
@@ -25,13 +28,13 @@ export default function GlobalView() {
   );
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-10 py-12">
-      <h1 className="flex items-center gap-3 text-4xl font-bold mb-10">
-        <PieChart size={32} className="text-violet-500" />
+    <div className="w-full max-w-5xl mx-auto px-4 py-6 sm:px-10 sm:py-12">
+      <h1 className="flex items-center gap-2.5 text-2xl font-bold mb-6 sm:gap-3 sm:text-4xl sm:mb-10">
+        <PieChart size={narrow ? 24 : 32} className="shrink-0 text-violet-500" />
         Vue globale
       </h1>
 
-      <div className="grid grid-cols-3 gap-4 mb-12">
+      <div className="grid grid-cols-3 gap-2 mb-8 sm:gap-4 sm:mb-12">
         <StatCard
           icon={<CalendarDays size={18} className="text-sky-600" />}
           label="Jours suivis"
@@ -60,7 +63,11 @@ export default function GlobalView() {
 
       <section>
         <h2 className="text-lg font-semibold mb-4">Historique complet</h2>
-        <HabitTable habits={state.habits} />
+        {narrow ? (
+          <HabitDayList habits={state.habits} days={days} />
+        ) : (
+          <HabitTable habits={state.habits} />
+        )}
       </section>
     </div>
   );
@@ -68,12 +75,12 @@ export default function GlobalView() {
 
 function StatCard({ icon, label, value }) {
   return (
-    <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
-      <div className="flex items-center gap-2 text-[13px] text-ink-light mb-1">
-        {icon}
+    <div className="rounded-2xl border border-line bg-card p-3 shadow-sm sm:p-4">
+      <div className="flex items-center gap-1.5 text-[11.5px] text-ink-light mb-1 sm:gap-2 sm:text-[13px]">
+        <span className="shrink-0">{icon}</span>
         {label}
       </div>
-      <div className="text-2xl font-bold tabular-nums">{value}</div>
+      <div className="text-xl font-bold tabular-nums sm:text-2xl">{value}</div>
     </div>
   );
 }
