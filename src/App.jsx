@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { PanelLeft } from "lucide-react";
 import { useStore } from "./store";
 import { useNarrow } from "./useNarrow";
 import Sidebar from "./components/Sidebar";
+import TabBar from "./components/TabBar";
 import PageView from "./components/PageView";
 import HabitsPage from "./components/habits/HabitsPage";
 import GlobalView from "./components/habits/GlobalView";
@@ -57,24 +57,19 @@ export default function App() {
         ) : (
           <Sidebar />
         ))}
-      {showOpenButton && (
-        <button
-          className="absolute left-2 top-2 z-40 flex items-center justify-center w-8 h-8 rounded-md bg-card/90 backdrop-blur border border-line shadow-sm text-ink-faint hover:text-ink hover:bg-hover transition-colors"
-          onClick={openSidebar}
-          title="Afficher la barre latérale"
-        >
-          <PanelLeft size={17} />
-        </button>
-      )}
-      <main
-        className={`flex-1 min-w-0 overflow-y-auto ${showOpenButton ? "pl-11" : ""}`}
-      >
-        {view.type === "page" && state.pages[view.id] && (
-          <PageView key={view.id} page={state.pages[view.id]} />
-        )}
-        {view.type === "habits" && <HabitsPage />}
-        {view.type === "global" && <GlobalView />}
-      </main>
+      {/* Le bouton d'ouverture de la barre latérale vit désormais DANS la barre
+          d'onglets : plus de bouton flottant, donc plus de gouttière `pl-11`
+          à réserver dans le contenu. */}
+      <div className="flex flex-1 min-w-0 flex-col">
+        <TabBar showOpenSidebar={showOpenButton} onOpenSidebar={openSidebar} />
+        <main className="flex-1 min-w-0 overflow-y-auto">
+          {view.type === "page" && state.pages[view.id] && (
+            <PageView key={view.id} page={state.pages[view.id]} />
+          )}
+          {view.type === "habits" && <HabitsPage />}
+          {view.type === "global" && <GlobalView />}
+        </main>
+      </div>
       <FloatingToolbar />
     </div>
   );

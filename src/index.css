@@ -371,8 +371,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
+  width: 22px;
+  flex-shrink: 0;
   min-height: 22px;
   color: var(--placeholder);
   opacity: 0;
@@ -459,6 +459,24 @@ body {
   background: transparent;
 }
 
+/* Croix de retrait d'une étiquette dans une cellule de tableau. Elle hérite du
+   blanc du texte de la puce et s'éclaircit au survol : un seul style couvre
+   les 8 couleurs de la palette. */
+.nf-chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  border-radius: 3px;
+  color: inherit;
+  transition: opacity 0.12s ease, background-color 0.12s ease;
+}
+.nf-chip-x:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
 /* Défilement horizontal sans barre visible : une barre de 10px à l'intérieur
    d'un contrôle segmenté de 33px de haut le défigurerait. */
 .nf-noscrollbar {
@@ -500,6 +518,11 @@ body {
   .nf-img-corner,
   .nf-margin-handle {
     opacity: 0.4 !important;
+  }
+
+  /* Sans survol, la croix de retrait d'étiquette ne se montrerait jamais. */
+  .nf-chip-x {
+    opacity: 0.6 !important;
   }
 
   /* Cible tactile élargie sans changer l'apparence : Android recommande

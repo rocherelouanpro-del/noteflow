@@ -12,6 +12,9 @@ import {
   Sun,
   Moon,
   PanelLeftClose,
+  Pin,
+  PinOff,
+  SquareArrowOutUpRight,
 } from "lucide-react";
 import { useStore, childrenOf } from "../store";
 import PageIcon from "./PageIcon";
@@ -24,6 +27,7 @@ export default function Sidebar() {
     state,
     view,
     setView,
+    openInNewTab,
     createPage,
     movePage,
     toggleTheme,
@@ -141,6 +145,18 @@ export default function Sidebar() {
     setEditingId(id);
   };
 
+  // Cmd/Ctrl+clic et clic du milieu ouvrent dans un nouvel onglet, comme dans
+  // un navigateur ; le clic simple navigue dans l'onglet courant.
+  const openView = (e, v) => {
+    if (e.metaKey || e.ctrlKey || e.button === 1) {
+      e.preventDefault();
+      openInNewTab(v);
+    } else {
+      setView(v);
+    }
+  };
+  const openPage = (e, id) => openView(e, { type: "page", id });
+
   // Redimensionnement façon Notion/Excel : largeur appliquée en direct au DOM
   // pendant le glissé (pas de re-render), puis validée dans l'état au relâchement.
   const startResize = (e) => {
@@ -175,6 +191,7 @@ export default function Sidebar() {
     setMenuId,
     beginPageDrag,
     dropPageId,
+    openPage,
   };
 
   return (
@@ -203,16 +220,18 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 pb-4">
+        <PinnedSection openPage={openPage} />
+
         <SectionLabel>Habitudes</SectionLabel>
         <NavItem
           active={view.type === "habits"}
-          onClick={() => setView({ type: "habits" })}
+          onClick={(e) => openView(e, { type: "habits" })}
           icon={<CheckCircle2 size={15} className="text-emerald-600" />}
           label="Suivi de mes habitudes"
         />
         <NavItem
           active={view.type === "global"}
-          onClick={() => setView({ type: "global" })}
+          onClick={(e) => openView(e, { type: "global" })}
           icon={<PieChart size={15} className="text-violet-500" />}
           label="Vue globale"
         />
@@ -243,6 +262,53 @@ export default function Sidebar() {
   );
 }
 
+// Raccourcis vers les pages épinglées, en tête de barre latérale. Liste plate
+// et volontairement sans arborescence : c'est un accès direct, pas une 2e vue
+// de la hiérarchie. Masquée tant que rien n'est épinglé.
+function PinnedSection({ openPage }) {
+  const { state, view, togglePin } = useStore();
+  const pinned = (state.ui?.pinned || [])
+    .map((id) => state.pages[id])
+    .filter(Boolean);
+  if (pinned.length === 0) return null;
+
+  return (
+    <>
+      <SectionLabel>Épinglés</SectionLabel>
+      {pinned.map((p) => {
+        const isActive = view.type === "page" && view.id === p.id;
+        return (
+          <div
+            key={p.id}
+            className={`group flex items-center gap-1.5 pl-2 pr-1 py-[3px] rounded cursor-pointer text-[13.5px] text-ink-light hover:bg-hover ${
+              isActive ? "bg-hover font-medium text-ink" : ""
+            }`}
+            onClick={(e) => openPage(e, p.id)}
+            onAuxClick={(e) => e.button === 1 && openPage(e, p.id)}
+          >
+            {p.icon ? (
+              <PageIcon icon={p.icon} size={14} className="w-[15px] text-center shrink-0" />
+            ) : (
+              <FileText size={14} className="shrink-0 text-ink-faint" />
+            )}
+            <span className="flex-1 truncate">{p.title || "Sans titre"}</span>
+            <button
+              className="icon-btn w-5 h-5 shrink-0 hidden group-hover:flex"
+              title="Ne plus épingler"
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePin(p.id);
+              }}
+            >
+              <PinOff size={13} />
+            </button>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 function SectionLabel({ children }) {
   return (
     <div className="flex items-center px-2 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
@@ -255,6 +321,7 @@ function NavItem({ active, onClick, icon, label }) {
   return (
     <button
       onClick={onClick}
+      onAuxClick={(e) => e.button === 1 && onClick(e)}
       className={`flex items-center gap-2 w-full px-2 py-1.5 rounded text-[13.5px] text-ink-light hover:bg-hover ${
         active ? "bg-hover font-medium text-ink" : ""
       }`}
@@ -281,8 +348,10 @@ function PageTree({ parentId, depth, ...props }) {
   return pages.map((p) => <PageNode key={p.id} page={p} depth={depth} {...props} />);
 }
 
-function PageNode({ page, depth, expanded, setExpanded, editingId, setEditingId, menuId, setMenuId, beginPageDrag, dropPageId }) {
-  const { state, view, setView, createPage, renamePage, deletePage } = useStore();
+function PageNode({ page, depth, expanded, setExpanded, editingId, setEditingId, menuId, setMenuId, beginPageDrag, dropPageId, openPage }) {
+  const { state, view, setView, createPage, renamePage, deletePage, togglePin, openInNewTab } =
+    useStore();
+  const isPinned = !!state.ui?.pinned?.includes(page.id);
   const isOpen = !!expanded[page.id];
   const isActive = view.type === "page" && view.id === page.id;
   const hasChildren = childrenOf(state.pages, page.id).length > 0;
@@ -304,7 +373,8 @@ function PageNode({ page, depth, expanded, setExpanded, editingId, setEditingId,
           isActive ? "bg-hover font-medium text-ink" : ""
         } ${isDropTarget ? "bg-accent/15 ring-1 ring-inset ring-accent/60" : ""}`}
         style={{ paddingLeft: depth * 14 + 4 }}
-        onClick={() => setView({ type: "page", id: page.id })}
+        onClick={(e) => openPage(e, page.id)}
+        onAuxClick={(e) => e.button === 1 && openPage(e, page.id)}
         onPointerDown={(e) => beginPageDrag(e, page)}
       >
         <button
@@ -371,7 +441,29 @@ function PageNode({ page, depth, expanded, setExpanded, editingId, setEditingId,
                 setMenuId(null);
               }}
             />
-            <div className="menu-panel absolute left-8 top-6 w-48">
+            <div className="menu-panel absolute left-8 top-6 w-56">
+              <button
+                className="menu-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuId(null);
+                  openInNewTab({ type: "page", id: page.id });
+                }}
+              >
+                <SquareArrowOutUpRight size={14} /> Ouvrir dans un nouvel onglet
+              </button>
+              <button
+                className="menu-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuId(null);
+                  togglePin(page.id);
+                }}
+              >
+                {isPinned ? <PinOff size={14} /> : <Pin size={14} />}
+                {isPinned ? "Ne plus épingler" : "Épingler"}
+              </button>
+              <div className="my-1 border-t border-line" />
               <button
                 className="menu-item"
                 onClick={(e) => {
@@ -408,6 +500,7 @@ function PageNode({ page, depth, expanded, setExpanded, editingId, setEditingId,
           setMenuId={setMenuId}
           beginPageDrag={beginPageDrag}
           dropPageId={dropPageId}
+          openPage={openPage}
         />
       )}
     </div>

@@ -18,6 +18,8 @@ import {
   ChevronLeft,
   WrapText,
   ArrowRight,
+  CircleDot,
+  Copy,
 } from "lucide-react";
 import { useStore } from "../store";
 import { uid, TAG_PALETTE, tagStyle, tagColor } from "../utils";
@@ -28,10 +30,17 @@ const COL_TYPES = [
   { id: "text", label: "Texte", icon: Type },
   { id: "number", label: "Nombre", icon: Hash },
   { id: "date", label: "Date", icon: Calendar },
+  { id: "selectone", label: "Choix unique", icon: CircleDot },
   { id: "select", label: "Choix multiple", icon: Tag },
 ];
 
 const typeIcon = (t) => COL_TYPES.find((c) => c.id === t)?.icon || Type;
+
+// Les deux colonnes à étiquettes partagent tout : mêmes `options` sur la
+// colonne, même stockage (un tableau d'ids dans la cellule). « Choix unique »
+// se contente de brider ce tableau à un seul élément — les tris, l'export
+// texte et le rendu restent donc communs.
+const isSelect = (t) => t === "select" || t === "selectone";
 
 // Retour à la ligne d'une cellule texte. Réglage par COLONNE (`col.wrap`,
 // actif par défaut), qu'une case peut surcharger individuellement
@@ -46,13 +55,25 @@ function cellWraps(col, row) {
 const DEFAULT_COL_W = 180; // colonne sans largeur définie
 const MIN_COL_W = 60; // largeur minimale au glissé
 const ACTIONS_W = 120; // colonne de fin (bouton + / suppression de ligne)
-const HANDLE_W = 26; // colonne de gauche : poignée de déplacement de ligne
+const HANDLE_W = 48; // colonne de gauche : poignée de déplacement + case à cocher
+
+// Copie des cellules d'une ligne. Une cellule peut contenir un tableau d'ids
+// d'étiquettes ou un objet « lien de page » : une copie plate partagerait la
+// référence, et modifier la copie modifierait l'original.
+function cloneCells(cells) {
+  const out = {};
+  for (const [k, v] of Object.entries(cells || {})) {
+    out[k] = Array.isArray(v) ? [...v] : v && typeof v === "object" ? { ...v } : v;
+  }
+  return out;
+}
 
 export default function TableBlock({ page, parentBlockId, block }) {
   const { updateBlockWith, removeBlock } = useStore();
   // Menu unique, positionné en fixed (échappe à l'overflow-x du tableau) :
   // { kind: "col" | "addcol" | "tags" | "table", colId?, rowId?, x, y }
   const [menu, setMenu] = useState(null);
+  const [selected, setSelected] = useState(() => new Set()); // ids de lignes cochées
 
   const mut = (fn, coalesceKey) =>
     updateBlockWith(page.id, parentBlockId, block.id, fn, coalesceKey);
@@ -276,7 +297,7 @@ export default function TableBlock({ page, parentBlockId, block }) {
         const n = parseFloat(String(v).replace(",", "."));
         return Number.isNaN(n) ? null : n;
       }
-      if (col.type === "select") {
+      if (isSelect(col.type)) {
         const labels = (v || [])
           .map((id) => col.options?.find((o) => o.id === id)?.label || "")
           .sort();
@@ -305,7 +326,7 @@ export default function TableBlock({ page, parentBlockId, block }) {
         id: uid(),
         name: def.label,
         type,
-        ...(type === "select" ? { options: [] } : {}),
+        ...(isSelect(type) ? { options: [] } : {}),
       });
     });
   };
@@ -319,11 +340,93 @@ export default function TableBlock({ page, parentBlockId, block }) {
 
   const menuCol = menu?.colId ? block.columns.find((c) => c.id === menu.colId) : null;
 
+  // ---- Sélection de lignes (suppression / duplication groupées) ----
+  // La sélection est recoupée avec les lignes réellement présentes : une
+  // annulation ou une suppression ailleurs ne doit pas laisser de fantômes.
+  const selectedIds = useMemo(
+    () => block.rows.filter((r) => selected.has(r.id)).map((r) => r.id),
+    [block.rows, selected]
+  );
+  const selCount = selectedIds.length;
+  const allSelected = selCount > 0 && selCount === block.rows.length;
+
+  const toggleRow = (id) =>
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+
+  const toggleAll = () =>
+    setSelected(allSelected ? new Set() : new Set(block.rows.map((r) => r.id)));
+
+  const deleteSelected = () => {
+    const kill = new Set(selectedIds);
+    mut((b) => (b.rows = b.rows.filter((r) => !kill.has(r.id))));
+    setSelected(new Set());
+  };
+
+  // Les copies sont insérées d'un bloc juste après la dernière ligne
+  // sélectionnée, dans leur ordre d'origine.
+  const duplicateSelected = () => {
+    const pick = new Set(selectedIds);
+    mut((b) => {
+      const copies = [];
+      let at = -1;
+      b.rows.forEach((r, i) => {
+        if (!pick.has(r.id)) return;
+        at = i;
+        copies.push({
+          id: uid(),
+          cells: cloneCells(r.cells),
+          ...(r.wrap ? { wrap: { ...r.wrap } } : {}),
+        });
+      });
+      if (copies.length) b.rows.splice(at + 1, 0, ...copies);
+    });
+    setSelected(new Set());
+  };
+
   return (
     <div ref={wrapRef} className="my-3 group/table relative">
-      <div className="flex items-center justify-end h-6 opacity-0 group-hover/table:opacity-100 transition-opacity">
+      {/* Barre du haut : options du tableau, et actions groupées dès qu'une
+          ligne est cochée (elle reste alors visible sans survol). */}
+      <div
+        className={`flex items-center gap-1 min-h-6 transition-opacity ${
+          selCount ? "" : "opacity-0 group-hover/table:opacity-100"
+        }`}
+      >
+        {selCount > 0 && (
+          <>
+            <span className="text-[12px] text-ink-light tabular-nums">
+              {selCount} ligne{selCount > 1 ? "s" : ""}
+            </span>
+            <button
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[12px] text-ink-light hover:bg-hover"
+              onClick={duplicateSelected}
+              title="Dupliquer les lignes sélectionnées"
+            >
+              <Copy size={12} /> Dupliquer
+            </button>
+            <button
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[12px] text-red-500 hover:bg-hover"
+              onClick={deleteSelected}
+              title="Supprimer les lignes sélectionnées"
+            >
+              <Trash2 size={12} /> Supprimer
+            </button>
+            <button
+              className="icon-btn w-5 h-5"
+              onClick={() => setSelected(new Set())}
+              title="Tout désélectionner"
+            >
+              <X size={12} />
+            </button>
+          </>
+        )}
         <button
-          className="icon-btn w-6 h-6"
+          className="icon-btn w-6 h-6 ml-auto"
           onClick={(e) => openMenuAt("table", e)}
           title="Options du tableau"
         >
@@ -346,7 +449,18 @@ export default function TableBlock({ page, parentBlockId, block }) {
           </colgroup>
           <thead>
             <tr className="border-y border-line">
-              <th className="p-0" />
+              <th className="p-0">
+                <div className="flex items-center justify-end h-full pr-1.5">
+                  <RowCheck
+                    checked={allSelected}
+                    partial={selCount > 0 && !allSelected}
+                    onChange={toggleAll}
+                    forceVisible={selCount > 0}
+                    hoverGroup="table"
+                    title={allSelected ? "Tout désélectionner" : "Tout sélectionner"}
+                  />
+                </div>
+              </th>
               {block.columns.map((col, index) => {
                 const Icon = typeIcon(col.type);
                 const sorted = block.sort?.colId === col.id ? block.sort.dir : null;
@@ -410,16 +524,28 @@ export default function TableBlock({ page, parentBlockId, block }) {
             {sortedRows.map((row, rowIndex) => (
               <tr key={row.id} className="group/row border-b border-line/70 hover:bg-panel/50">
                 <td className="p-0 align-middle">
-                  {!block.sort && (
-                    <div
-                      className="nf-row-grip"
-                      data-col-resize="1"
-                      onPointerDown={(e) => startRowDrag(e, rowIndex)}
-                      title="Glisser pour déplacer la ligne"
-                    >
-                      <GripVertical size={13} />
-                    </div>
-                  )}
+                  <div className="flex items-center gap-0.5 pr-1.5 py-1">
+                    {!block.sort ? (
+                      <div
+                        className="nf-row-grip"
+                        data-col-resize="1"
+                        onPointerDown={(e) => startRowDrag(e, rowIndex)}
+                        title="Glisser pour déplacer la ligne"
+                      >
+                        <GripVertical size={13} />
+                      </div>
+                    ) : (
+                      // le tri désactive le déplacement manuel : on garde
+                      // néanmoins la gouttière pour ne pas décaler les cases
+                      <span className="w-[22px] shrink-0" />
+                    )}
+                    <RowCheck
+                      checked={selected.has(row.id)}
+                      onChange={() => toggleRow(row.id)}
+                      forceVisible={selCount > 0}
+                      title="Sélectionner la ligne"
+                    />
+                  </div>
                 </td>
                 {block.columns.map((col) => (
                   <Cell
@@ -544,7 +670,16 @@ export default function TableBlock({ page, parentBlockId, block }) {
                   const c = b.columns.find((x) => x.id === menuCol.id);
                   if (!c || c.type === t.id) return;
                   c.type = t.id;
-                  if (t.id === "select" && !c.options) c.options = [];
+                  if (isSelect(t.id) && !c.options) c.options = [];
+                  // Passage en choix unique : les cases qui portaient
+                  // plusieurs étiquettes ne gardent que la première, sinon
+                  // la colonne afficherait des valeurs impossibles à obtenir.
+                  if (t.id === "selectone") {
+                    for (const r of b.rows) {
+                      const cur = r.cells[c.id];
+                      if (Array.isArray(cur) && cur.length > 1) r.cells[c.id] = [cur[0]];
+                    }
+                  }
                 });
                 setMenu(null);
               }}
@@ -592,6 +727,7 @@ export default function TableBlock({ page, parentBlockId, block }) {
           col={menuCol}
           row={block.rows.find((r) => r.id === menu.rowId)}
           mut={mut}
+          close={() => setMenu(null)}
         />
       )}
 
@@ -684,21 +820,55 @@ function CellMenu({ menu, col, row, setCellWrap, setColWrap, close }) {
   );
 }
 
+// Case à cocher de sélection d'une ligne (et « tout sélectionner » en en-tête).
+// Discrète : elle n'apparaît qu'au survol, sauf si elle est cochée ou si une
+// sélection est déjà en cours — sinon on perdrait de vue ce qui est coché.
+function RowCheck({ checked, partial, onChange, forceVisible, title, hoverGroup = "row" }) {
+  const vis =
+    forceVisible || checked
+      ? "opacity-100"
+      : hoverGroup === "table"
+        ? "opacity-0 group-hover/table:opacity-100"
+        : "opacity-0 group-hover/row:opacity-100";
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onChange();
+      }}
+      title={title}
+      aria-pressed={!!checked}
+      className={`shrink-0 flex items-center justify-center w-[18px] h-[18px] transition-opacity ${vis}`}
+    >
+      <span
+        className={`flex w-[15px] h-[15px] items-center justify-center rounded-[4px] border-2 transition-colors ${
+          checked || partial ? "bg-accent border-accent" : "border-ink-faint/70"
+        }`}
+      >
+        {checked && <Check size={10} strokeWidth={4} className="text-white" />}
+        {partial && !checked && <span className="w-[7px] h-[2px] rounded-full bg-white" />}
+      </span>
+    </button>
+  );
+}
+
 function Cell({ col, row, mut, openMenuAt, openCellMenu, pageId }) {
   const { state, setView, createPage } = useStore();
   const [pmenu, setPmenu] = useState(null); // { x, y, query } — menu « /page »
   // Retour à la ligne : réglage de la colonne, qu'une case peut surcharger.
   const wrapOn = cellWraps(col, row);
 
-  const setCell = (value) =>
+  // `coalesce` : la frappe dans une case se fond en une seule annulation, mais
+  // un clic (retirer une étiquette) doit rester une action à part entière.
+  const setCell = (value, coalesce = true) =>
     mut((b) => {
       const r = b.rows.find((x) => x.id === row.id);
       if (r) r.cells[col.id] = value;
-    }, `cell:${row.id}:${col.id}`);
+    }, coalesce ? `cell:${row.id}:${col.id}` : undefined);
 
   const v = row.cells[col.id];
 
-  if (col.type === "select") {
+  if (isSelect(col.type)) {
     const ids = Array.isArray(v) ? v : [];
     const options = col.options || [];
     return (
@@ -713,10 +883,25 @@ function Cell({ col, row, mut, openMenuAt, openCellMenu, pageId }) {
             return (
               <span
                 key={id}
-                className="px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap"
+                className="group/chip inline-flex items-center gap-0.5 pl-1.5 pr-1 py-0.5 rounded text-xs font-medium whitespace-nowrap"
                 style={tagStyle(o.color)}
               >
                 {o.label}
+                {/* La croix occupe sa place en permanence : elle n'apparaît
+                    qu'au survol, mais sans faire sauter la largeur de la puce. */}
+                <button
+                  className="nf-chip-x opacity-0 group-hover/chip:opacity-100 focus:opacity-100"
+                  title={`Retirer « ${o.label} »`}
+                  onClick={(e) => {
+                    e.stopPropagation(); // sinon le popover d'étiquettes s'ouvre
+                    setCell(
+                      ids.filter((x) => x !== id),
+                      false
+                    );
+                  }}
+                >
+                  <X size={11} strokeWidth={3} />
+                </button>
               </span>
             );
           })}
@@ -958,7 +1143,8 @@ function CellPageMenu({ pos, query, pages, onPick, onNew, onClose }) {
   );
 }
 
-function TagPopover({ menu, col, row, mut }) {
+function TagPopover({ menu, col, row, mut, close }) {
+  const single = col.type === "selectone";
   const [input, setInput] = useState("");
   const [editId, setEditId] = useState(null); // étiquette en cours de modification
   const origLabel = useRef(""); // nom d'avant l'édition (restauré si vidé)
@@ -995,15 +1181,24 @@ function TagPopover({ menu, col, row, mut }) {
     setEditId(null);
   };
 
-  const toggleTag = (optId) =>
+  // En choix unique, sélectionner remplace au lieu d'ajouter (et re-cliquer
+  // l'étiquette déjà posée la retire), puis le panneau se referme : il n'y a
+  // plus rien à y faire.
+  const toggleTag = (optId) => {
     mut((b) => {
       const r = b.rows.find((x) => x.id === row.id);
       if (!r) return;
       const cur = Array.isArray(r.cells[col.id]) ? r.cells[col.id] : [];
-      r.cells[col.id] = cur.includes(optId)
-        ? cur.filter((x) => x !== optId)
-        : [...cur, optId];
+      if (single) {
+        r.cells[col.id] = cur.includes(optId) ? [] : [optId];
+      } else {
+        r.cells[col.id] = cur.includes(optId)
+          ? cur.filter((x) => x !== optId)
+          : [...cur, optId];
+      }
     });
+    if (single) close();
+  };
 
   const createTag = () => {
     const label = input.trim();
@@ -1026,8 +1221,9 @@ function TagPopover({ menu, col, row, mut }) {
         const r = b.rows.find((x) => x.id === row.id);
         if (!r) return;
         const cur = Array.isArray(r.cells[col.id]) ? r.cells[col.id] : [];
-        r.cells[col.id] = [...cur, opt.id];
+        r.cells[col.id] = single ? [opt.id] : [...cur, opt.id];
       });
+      if (single) close();
     }
     setInput("");
   };

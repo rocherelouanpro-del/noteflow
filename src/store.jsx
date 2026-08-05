@@ -209,8 +209,66 @@ function cloneBlockDeep(block, s, ownerPageId) {
 
 export function StoreProvider({ children }) {
   const [state, setState] = useState(null);
-  const [view, setView] = useState({ type: "habits" });
+  // Onglets : chacun porte sa propre vue (page, habitudes, vue globale).
+  // Ils vivent le temps de la session — comme la vue unique d'avant, ils ne
+  // sont pas écrits dans le fichier de données (changer d'onglet ne doit pas
+  // remplir la pile d'annulation).
+  const [tabs, setTabs] = useState(() => [{ id: "t0", view: { type: "habits" } }]);
+  const [activeTabId, setActiveTabId] = useState("t0");
+  const activeTabIdRef = useRef("t0");
+  activeTabIdRef.current = activeTabId;
+  const activeIndex = Math.max(
+    0,
+    tabs.findIndex((t) => t.id === activeTabId)
+  );
+  const view = tabs[activeIndex]?.view || { type: "habits" };
   const [focusId, setFocusId] = useState(null);
+
+  // Navigue DANS l'onglet actif (comme un navigateur). Le ref évite qu'un
+  // appel différé (promesse de chargement, action du store) ne vise l'onglet
+  // qui était actif au moment où la fonction a été créée.
+  const setView = (v) =>
+    setTabs((list) => {
+      const i = Math.max(
+        0,
+        list.findIndex((t) => t.id === activeTabIdRef.current)
+      );
+      const cur = list[i];
+      if (!cur) return list;
+      const next = typeof v === "function" ? v(cur.view) : v;
+      if (next === cur.view) return list;
+      const copy = [...list];
+      copy[i] = { ...cur, view: next };
+      return copy;
+    });
+
+  const openInNewTab = (v) => {
+    const id = uid();
+    setTabs((list) => [...list, { id, view: v }]);
+    setActiveTabId(id);
+  };
+
+  const selectTab = (id) => setActiveTabId(id);
+
+  // Le dernier onglet ne se ferme pas : la fenêtre resterait vide.
+  const closeTab = (id) => {
+    if (tabs.length <= 1) return;
+    const i = tabs.findIndex((t) => t.id === id);
+    if (i === -1) return;
+    const next = tabs.filter((t) => t.id !== id);
+    setTabs(next);
+    // comme un navigateur : on bascule sur le voisin de droite, sinon de gauche
+    if (id === activeTabId) setActiveTabId(next[Math.min(i, next.length - 1)].id);
+  };
+
+  // Filet de sécurité : si l'onglet actif disparaît (page supprimée), on
+  // retombe sur le premier.
+  useEffect(() => {
+    if (tabs.length && !tabs.some((t) => t.id === activeTabId)) {
+      setActiveTabId(tabs[0].id);
+    }
+  }, [tabs, activeTabId]);
+
   const saveTimer = useRef(null);
   const stateRef = useRef(null);
   stateRef.current = state;
@@ -382,14 +440,25 @@ export function StoreProvider({ children }) {
           scrub(p.blocks);
           collapseColumns(p.blocks);
         }
+        // une page supprimée ne peut pas rester épinglée
+        if (s.ui?.pinned?.some((id) => doomed.has(id))) {
+          s.ui = { ...s.ui, pinned: s.ui.pinned.filter((id) => !doomed.has(id)) };
+        }
       });
-      setView((v) =>
-        v.type === "page" && doomed.has(v.id)
-          ? fallback
-            ? { type: "page", id: fallback }
-            : { type: "habits" }
-          : v
-      );
+      // Les onglets ouverts sur une page supprimée se ferment. Si c'étaient
+      // les seuls, il en reste un, replié sur la page voisine.
+      setTabs((list) => {
+        const kept = list.filter(
+          (t) => !(t.view.type === "page" && doomed.has(t.view.id))
+        );
+        if (kept.length) return kept;
+        return [
+          {
+            id: uid(),
+            view: fallback ? { type: "page", id: fallback } : { type: "habits" },
+          },
+        ];
+      });
     };
 
     // ---- Blocs ----
@@ -723,6 +792,17 @@ export function StoreProvider({ children }) {
         s.ui = { ...(s.ui || {}), habitPeriod: p };
       });
 
+    // Pages épinglées : raccourcis en haut de la barre latérale, dans l'ordre
+    // d'ajout. On ne stocke que des ids — le titre et l'icône suivent la page.
+    a.togglePin = (id) =>
+      mutate((s) => {
+        const cur = s.ui?.pinned || [];
+        s.ui = {
+          ...(s.ui || {}),
+          pinned: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id],
+        };
+      });
+
     a.setSidebarWidth = (w) =>
       mutate((s) => {
         s.ui = { ...(s.ui || {}), sidebarWidth: w };
@@ -774,8 +854,20 @@ export function StoreProvider({ children }) {
   }, [actions]);
 
   const value = useMemo(
-    () => ({ state, view, setView, focusId, setFocusId, ...actions }),
-    [state, view, focusId, actions]
+    () => ({
+      state,
+      view,
+      setView,
+      tabs,
+      activeTabId,
+      openInNewTab,
+      selectTab,
+      closeTab,
+      focusId,
+      setFocusId,
+      ...actions,
+    }),
+    [state, tabs, activeTabId, focusId, actions]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
