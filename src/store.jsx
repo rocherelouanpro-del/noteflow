@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { loadData, saveData } from "./storage";
 import { uid, newBlock, dateKey, addDays, HABIT_COLORS, MAX_COLUMNS } from "./utils";
+import { clampZoom, stepZoom, DEFAULT_ZOOM, ZOOM_SUPPORTED } from "./zoom";
 
 const StoreContext = createContext(null);
 
@@ -281,7 +282,12 @@ export function StoreProvider({ children }) {
       // données existantes d'avant l'ajout du thème : "light" par défaut
       const s = data ? { theme: "light", ...data } : defaultState();
       // préférences d'interface (barre latérale, période des habitudes)
-      s.ui = { sidebarWidth: 256, sidebarCollapsed: false, ...(s.ui || {}) };
+      s.ui = {
+        sidebarWidth: 256,
+        sidebarCollapsed: false,
+        zoom: DEFAULT_ZOOM,
+        ...(s.ui || {}),
+      };
       // Migration : les habitudes autrefois « masquées » sont supprimées
       // définitivement (elles ne comptent plus dans les pourcentages).
       if (s.habits?.some((h) => h.visible === false)) {
@@ -803,6 +809,22 @@ export function StoreProvider({ children }) {
         };
       });
 
+    // Zoom général. Le `coalesceKey` évite qu'une rafale de Cmd + ne laisse
+    // autant d'entrées dans la pile d'annulation.
+    a.setZoom = (z) =>
+      mutate((s) => {
+        s.ui = { ...(s.ui || {}), zoom: clampZoom(z) };
+      }, "zoom");
+
+    // Le palier est calculé DANS le updater : deux appuis dans le même tick
+    // (auto-répétition du clavier) sont groupés par React, et `stateRef` y
+    // renverrait deux fois la même valeur d'origine — un seul cran passerait.
+    a.stepZoom = (direction) =>
+      mutate((s) => {
+        const cur = s.ui?.zoom ?? DEFAULT_ZOOM;
+        s.ui = { ...(s.ui || {}), zoom: clampZoom(stepZoom(cur, direction)) };
+      }, "zoom");
+
     a.setSidebarWidth = (w) =>
       mutate((s) => {
         s.ui = { ...(s.ui || {}), sidebarWidth: w };
@@ -847,6 +869,16 @@ export function StoreProvider({ children }) {
       } else if (k === "y") {
         e.preventDefault();
         actions.redo();
+      } else if (ZOOM_SUPPORTED && (k === "+" || k === "=")) {
+        // `=` : sur la plupart des dispositions, Cmd + se tape sans Maj
+        e.preventDefault();
+        actions.stepZoom(1);
+      } else if (ZOOM_SUPPORTED && (k === "-" || k === "_")) {
+        e.preventDefault();
+        actions.stepZoom(-1);
+      } else if (ZOOM_SUPPORTED && k === "0") {
+        e.preventDefault();
+        actions.setZoom(DEFAULT_ZOOM);
       }
     };
     document.addEventListener("keydown", onKey, true);

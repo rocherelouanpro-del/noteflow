@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { X, Plus, CheckCircle2, PieChart, FileText, PanelLeft } from "lucide-react";
+import { X, Plus, CheckCircle2, PieChart, FileText, PanelLeft, Minus } from "lucide-react";
 import { useStore } from "../store";
+import { ZOOM_STEPS, DEFAULT_ZOOM, ZOOM_SUPPORTED } from "../zoom";
 import PageIcon from "./PageIcon";
 import PagePicker from "./PagePicker";
 
@@ -28,6 +29,46 @@ function tabInfo(view, pages) {
       <FileText size={13} className="shrink-0 text-ink-faint" />
     ),
   };
+}
+
+// Zoom général, à droite de la barre d'onglets : toujours atteignable, même
+// barre latérale repliée. Cliquer le pourcentage revient à 100 %.
+function ZoomControl() {
+  const { state, setZoom, stepZoom } = useStore();
+  if (!ZOOM_SUPPORTED) return null;
+  const zoom = state.ui?.zoom ?? DEFAULT_ZOOM;
+  const min = zoom <= ZOOM_STEPS[0];
+  const max = zoom >= ZOOM_STEPS[ZOOM_STEPS.length - 1];
+
+  return (
+    <div className="flex shrink-0 items-center gap-0.5 pl-1 pr-1.5 border-l border-line">
+      <button
+        className="icon-btn w-6 h-6 disabled:opacity-30"
+        onClick={() => stepZoom(-1)}
+        disabled={min}
+        title="Réduire (Cmd -)"
+      >
+        <Minus size={14} />
+      </button>
+      <button
+        className={`px-1 rounded text-[12px] tabular-nums hover:bg-hover ${
+          zoom === DEFAULT_ZOOM ? "text-ink-faint" : "text-ink font-medium"
+        }`}
+        onClick={() => setZoom(DEFAULT_ZOOM)}
+        title="Revenir à 100 % (Cmd 0)"
+      >
+        {Math.round(zoom * 100)} %
+      </button>
+      <button
+        className="icon-btn w-6 h-6 disabled:opacity-30"
+        onClick={() => stepZoom(1)}
+        disabled={max}
+        title="Agrandir (Cmd +)"
+      >
+        <Plus size={14} />
+      </button>
+    </div>
+  );
 }
 
 export default function TabBar({ showOpenSidebar, onOpenSidebar }) {
@@ -102,6 +143,8 @@ export default function TabBar({ showOpenSidebar, onOpenSidebar }) {
           <Plus size={15} />
         </button>
       </div>
+
+      <ZoomControl />
 
       {picker && (
         <PagePicker

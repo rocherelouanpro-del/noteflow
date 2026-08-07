@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useStore } from "./store";
 import { useNarrow } from "./useNarrow";
+import { applyZoom, DEFAULT_ZOOM } from "./zoom";
 import Sidebar from "./components/Sidebar";
 import TabBar from "./components/TabBar";
 import PageView from "./components/PageView";
@@ -26,6 +27,12 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.toggle("dark", state?.theme === "dark");
   }, [state?.theme]);
+
+  // Zoom appliqué à la fenêtre elle-même, et réappliqué au démarrage : le
+  // webview repart toujours à 100 %.
+  useEffect(() => {
+    if (state) applyZoom(state.ui?.zoom ?? DEFAULT_ZOOM);
+  }, [state?.ui?.zoom, !!state]);
 
   if (!state) {
     return (
